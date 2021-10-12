@@ -7,8 +7,10 @@ Command interpreter for meek
 from inspect import getdoc
 import logging
 from meek.manager import Manager
+from pathlib import Path
 import readline
 
+WHERE_DEFAULT = '~/.meek'
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +97,32 @@ class Interpreter:
             > new Take a nap due:2021-07-03
             > new Take a nap tags=personal,home,health
         """
-        return f'New! "{args}" "{kwargs}"'
+        if len(args) > 0:
+            try:
+                kwargs['title']
+            except KeyError:
+                kwargs['title'] = ' '.join(args)
+            else:
+                raise ValueError(f'args: {args}, kwargs: {kwargs}')
+        return self.manager.new_activity(**kwargs)
+
+    def _verb_save(self, args, **kwargs):
+        """
+        Save activities to storage.
+            > save
+              saves to default location
+            > save my/favorite/directory
+              saves to indicated path
+              WARNING: deletes existing content
+        """
+        if len(args) == 0:
+            where = WHERE_DEFAULT
+        elif len(args) == 1:
+            where = args
+        else:
+            raise ValueError(args)
+        where = Path(where).expanduser().resolve()
+        return self.manager.save_activities(where)
 
     def _verb_quit(self, args, **kwargs):
         """
