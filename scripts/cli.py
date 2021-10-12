@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Python 3 script template (changeme)
+Command-line interface for meek
 """
 
 from airtight.cli import configure_commandline
+from meek.interpreter import Interpreter
+from meek.norm import norm
 import logging
+import shlex
+
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +29,24 @@ POSITIONAL_ARGUMENTS = [
 ]
 
 
+def interact():
+    i = Interpreter()
+    while True:
+        try:
+            s = norm(input('> '))
+        except KeyboardInterrupt:
+            i.parse('quit')
+        parts = shlex.split(s)
+        result = i.parse(parts)
+        print(result)
+
+
 def main(**kwargs):
     """
     main function
     """
     # logger = logging.getLogger(sys._getframe().f_code.co_name)
-    pass
+    interact()
 
 
 if __name__ == "__main__":
