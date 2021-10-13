@@ -52,6 +52,16 @@ class Activity:
             raise TypeError(f'{type(value)}: {repr(value)}')
         self._title = norm(value)
 
+    @property
+    def words(self):
+        attrs = [a for a in dir(self) if a != '_id' and a.startswith('_') and isinstance(
+            a, (str, list)) and not a.startswith('__')]
+        attrvals = [getattr(self, a) for a in attrs]
+        wset = set()
+        for attrval in attrvals:
+            wset.update(attrval.split())
+        return wset
+
     def __str__(self):
         return f'{self.title}'
 

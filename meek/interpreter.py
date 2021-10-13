@@ -65,13 +65,6 @@ class Interpreter:
         usage = getdoc(getattr(self, f'_verb_{verb}')).splitlines()[1:]
         return '\n'.join(usage)
 
-    def _verb_purge(self, args, **kwargs):
-        """
-        Clear all activities and indexes.
-            > purge
-        """
-        return self.manager.purge()
-
     def _verb_help(self, args, **kwargs):
         """
         Get help with available commands.
@@ -91,6 +84,24 @@ class Interpreter:
             entries = [f'{e[0]}:'.rjust(
                 longest+1) + f' {e[1]}' for e in entries]
             return '\n'.join(entries)
+
+    def _verb_list(self, args, **kwargs):
+        """
+        List activities.
+            > list
+            > list eat
+            > list tags:daily
+            > list due:today
+            > list due:week
+        """
+        if args:
+            try:
+                kwargs['words']
+            except KeyError:
+                kwargs['words'] = args
+            else:
+                kwargs['words'] = list(set(args).update(kwargs['words']))
+        return self.manager.list_activities(**kwargs)
 
     def _verb_load(self, args, **kwargs):
         """
@@ -129,6 +140,13 @@ class Interpreter:
             else:
                 raise ValueError(f'args: {args}, kwargs: {kwargs}')
         return self.manager.new_activity(**kwargs)
+
+    def _verb_purge(self, args, **kwargs):
+        """
+        Clear all activities and indexes.
+            > purge
+        """
+        return self.manager.purge()
 
     def _verb_save(self, args, **kwargs):
         """

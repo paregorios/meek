@@ -19,12 +19,38 @@ class Manager:
     def __init__(self):
         self.activities = dict()
         self.previous = deque()
+        self.current = list()
+        self.indexes = {
+            'title': {},
+            'words': {}
+        }
 
     def add_activity(self, activity):
         """ Add an activity to the manager. """
         self.activities[activity.id.hex] = activity
-        # indexing tbd
+        self._index_activity(activity)
         return activity
+
+    def _index_activity(self, activity):
+        for idxk, idx in self.indexes.items():
+            try:
+                v = getattr(activity, idxk)
+            except AttributeError:
+                logger.error(f'indexable attribute not found: {idxk}')
+            else:
+                if isinstance(v, str):
+                    vals = [v, ]
+                elif isinstance(v, (list, set)):
+                    vals = v
+                else:
+                    raise TypeError(f'v: {type(v)}={repr(v)}')
+                for v in [val.lower() for val in vals]:
+                    try:
+                        idx[v]
+                    except KeyError:
+                        idx[v] = list()
+                    finally:
+                        idx[v].append(activity)
 
     def new_activity(self, **kwargs):
         """ Create a new activity and add it to the manager. """
@@ -32,6 +58,53 @@ class Manager:
         a = self.add_activity(a)
         self.previous.append(a)
         return f'Added {repr(a)}.'
+
+    def _filter_list_title(self, alist, filtervals):
+        result = set(alist)
+        for fv in filtervals:
+            result = result.intersection(self.indexes['title'][fv])
+        return list(result)
+
+    def _filter_list(self, alist, idxname, argv):
+        if isinstance(argv, str):
+            filtervals = [argv, ]
+        elif isinstance(argv, list):
+            filtervals = argv
+        else:
+            raise TypeError(f'argv: {type(argv)}={repr(argv)}')
+        result = set(alist)
+        for fv in [v.lower() for v in filtervals]:
+            idx = self.indexes[idxname]
+            try:
+                blist = idx[fv]
+            except KeyError:
+                blist = list()
+            result = result.intersection(blist)
+        return list(result)
+
+    def _get_list(self, **kwargs):
+        alist = list(self.activities.values())
+        if not kwargs:
+            return alist
+        for k, argv in kwargs.items():
+            if k == 'sort':
+                continue
+            alist = self._filter_list(alist, k, argv)
+        return alist
+
+    def list_activities(self, **kwargs):
+        alist = self._get_list(**kwargs)
+        try:
+            sortkeys = kwargs['sort']
+        except KeyError:
+            alist.sort(key=lambda a: a.title)
+        else:
+            if isinstance(sortkeys, str):
+                alist.sort(key=lambda a: getattr(a, sortkeys))
+            elif isinstance(sortkeys, list):
+                alist.sort(key=lambda a: [getattr(a, sk) for sk in sortkeys])
+        self.current = alist
+        return '\n'.join([f'{i}: {repr(a)}' for i, a in enumerate(alist)])
 
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'
