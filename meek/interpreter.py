@@ -23,7 +23,9 @@ class Interpreter:
         self.aliases = {
             'q': 'quit',
             'h': 'help',
-            '?': 'help'
+            '?': 'help',
+            'all': 'list',
+            'ls': 'list'
         }
 
     def parse(self, parts):

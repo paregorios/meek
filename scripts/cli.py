@@ -13,7 +13,7 @@ import shlex
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_LOG_LEVEL = logging.INFO
+DEFAULT_LOG_LEVEL = logging.WARNING
 OPTIONAL_ARGUMENTS = [
     ['-l', '--loglevel', 'NOTSET',
         'desired logging level (' +
@@ -38,7 +38,8 @@ def interact():
             i.parse('quit')
         parts = shlex.split(s)
         result = i.parse(parts)
-        print(result)
+        if result != '':
+            print(result)
 
 
 def main(**kwargs):

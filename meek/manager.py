@@ -39,6 +39,19 @@ class Manager:
         logger.info(f'display_full_activities() ignoring kwargs={kwargs}')
         if args:
             v = ' '.join(args)
+            if v in ['last', 'previous']:
+                return self.display_full_activity(-1)
+            elif v == 'all':
+                context = self.current
+                if len(context) == 0:
+                    context = list(self.previous)
+                msg = []
+                for i in range(0, len(context)):
+                    msg.append(self.display_full_activity(i))
+                msg = '\n'.join(msg)
+                return msg
+            elif v == 'first':
+                return self.display_full_activity(0)
             m = rx_numeric.match(v)
             if m:
                 return self.display_full_activity(int(m.group('numeric')))
@@ -49,23 +62,29 @@ class Manager:
                     msg.append(self.display_full_activity(i))
                 msg = '\n'.join(msg)
                 return msg
+            logger.error(f'Unrecognized argument "{v}".')
+            return ''
         else:
             return self.display_full_activity()
 
     def display_full_activity(self, sequence=None):
+        if len(self.current) == 0:
+            context = list(self.previous)
+        else:
+            context = self.current
         if sequence is not None:
             try:
-                a = self.current[sequence]
+                a = context[sequence]
             except IndexError:
                 logger.error(
-                    f'Sequence number {sequence} is not in current list.')
+                    f'Sequence number {sequence} is not in current context.')
                 return self._format_list(self.current)
         else:
             try:
-                a = self.current[-1]
+                a = context[-1]
             except IndexError:
                 logger.error(
-                    'No current list is defined. Try issuing the command  "list" first.')
+                    'No activity context is defined. Try the "list" command first.')
                 return ''
         d = a.asdict()
         return pformat(d, indent=4, sort_dicts=True)
@@ -165,6 +184,12 @@ class Manager:
             'daily': {
                 'tags': 'daily'
                 # 'due':
+            },
+            'medicated': {
+                'tags': 'health'
+            },
+            'meds': {
+                'tags': 'health'
             }
         }
         awords = activity.words
