@@ -7,6 +7,7 @@ Manager for meek
 from collections import deque
 import json
 import logging
+import maya
 from meek.activity import Activity
 import pathlib
 from pprint import pformat
@@ -26,7 +27,8 @@ class Manager:
         self.current = list()
         self.indexes = {
             'title': {},
-            'words': {}
+            'words': {},
+            'due': {}
         }
 
     def add_activity(self, activity):
@@ -97,27 +99,6 @@ class Manager:
         self.previous.append(a)
         return f'Added {repr(a)}.'
 
-    def _index_activity(self, activity):
-        for idxk, idx in self.indexes.items():
-            try:
-                v = getattr(activity, idxk)
-            except AttributeError:
-                logger.error(f'indexable attribute not found: {idxk}')
-            else:
-                if isinstance(v, str):
-                    vals = [v, ]
-                elif isinstance(v, (list, set)):
-                    vals = v
-                else:
-                    raise TypeError(f'v: {type(v)}={repr(v)}')
-                for v in [val.lower() for val in vals]:
-                    try:
-                        idx[v]
-                    except KeyError:
-                        idx[v] = list()
-                    finally:
-                        idx[v].append(activity)
-
     def list_activities(self, **kwargs):
         alist = self._get_list(**kwargs)
         try:
@@ -132,8 +113,8 @@ class Manager:
         self.current = alist
         return self._format_list(alist)
 
-    def _format_list(self, alist):
-        return '\n'.join([f'{i}: {repr(a)}' for i, a in enumerate(alist)])
+    def list_due(self, qualifier):
+        lookup = {}
 
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'
@@ -208,6 +189,8 @@ class Manager:
     def _filter_list(self, alist, idxname, argv):
         if isinstance(argv, str):
             filtervals = [argv, ]
+        elif isinstance(argv, maya.MayaDT):
+            filtervals = [argv.iso8601(), ]
         elif isinstance(argv, list):
             filtervals = argv
         else:
@@ -222,6 +205,9 @@ class Manager:
             result = result.intersection(blist)
         return list(result)
 
+    def _format_list(self, alist):
+        return '\n'.join([f'{i}: {repr(a)}' for i, a in enumerate(alist)])
+
     def _get_list(self, **kwargs):
         alist = list(self.activities.values())
         if not kwargs:
@@ -231,3 +217,28 @@ class Manager:
                 continue
             alist = self._filter_list(alist, k, argv)
         return alist
+
+    def _index_activity(self, activity):
+        for idxk, idx in self.indexes.items():
+            try:
+                v = getattr(activity, idxk)
+            except AttributeError:
+                logger.error(f'indexable attribute not found: {idxk}')
+            else:
+                if v is None:
+                    continue
+                elif isinstance(v, str):
+                    vals = [v, ]
+                elif isinstance(v, maya.MayaDT):
+                    vals = [v.iso8601(), ]
+                elif isinstance(v, (list, set)):
+                    vals = v
+                else:
+                    raise TypeError(f'v: {type(v)}={repr(v)}')
+                for v in [val.lower() for val in vals]:
+                    try:
+                        idx[v]
+                    except KeyError:
+                        idx[v] = list()
+                    finally:
+                        idx[v].append(activity)

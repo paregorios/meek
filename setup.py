@@ -19,6 +19,11 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=['airtight', 'maya', 'textnorm'],
+    install_requires=[
+        'airtight',
+        'maya@git+https://github.com/timofurrer/maya#b12a8dad11aec99ef62b063b5631dce0f528bcb4',
+        'textnorm',
+        'tzlocal'
+    ],
     python_requires='==3.9.7'
 )

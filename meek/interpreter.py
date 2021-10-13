@@ -74,6 +74,18 @@ class Interpreter:
         logging.getLogger().setLevel(level=logging.DEBUG)
         return self._verb_level(args, **kwargs)
 
+    def _verb_due(self, args, **kwargs):
+        """
+        List unfinished activities by due date.
+            > due
+            > due today
+            > due tomorrow
+            > due this week
+            > due this month
+        """
+        qualifier = ' '.join(args)
+        return self.manager.list_due(qualifier)
+
     def _verb_error(self, args, **kwargs):
         """
         Change logging level to ERROR
@@ -114,8 +126,8 @@ class Interpreter:
             > list
             > list eat
             > list tags:daily
-            > list due:today
-            > list due:week
+            > list tags:daily due:today
+            > list overdue
         """
         if args:
             try:
