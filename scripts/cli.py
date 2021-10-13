@@ -13,7 +13,7 @@ import shlex
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_LOG_LEVEL = logging.WARNING
+DEFAULT_LOG_LEVEL = logging.INFO
 OPTIONAL_ARGUMENTS = [
     ['-l', '--loglevel', 'NOTSET',
         'desired logging level (' +
