@@ -65,6 +65,20 @@ class Interpreter:
         usage = getdoc(getattr(self, f'_verb_{verb}')).splitlines()[1:]
         return '\n'.join(usage)
 
+    def _verb_debug(self, args, **kwargs):
+        """
+        Change logging level to DEBUG
+        """
+        logging.getLogger().setLevel(level=logging.DEBUG)
+        return self._verb_level(args, **kwargs)
+
+    def _verb_error(self, args, **kwargs):
+        """
+        Change logging level to ERROR
+        """
+        logging.getLogger().setLevel(level=logging.ERROR)
+        return self._verb_level(args, **kwargs)
+
     def _verb_help(self, args, **kwargs):
         """
         Get help with available commands.
@@ -84,6 +98,13 @@ class Interpreter:
             entries = [f'{e[0]}:'.rjust(
                 longest+1) + f' {e[1]}' for e in entries]
             return '\n'.join(entries)
+
+    def _verb_info(self, args, **kwargs):
+        """
+        Change logging level to INFO
+        """
+        logging.getLogger().setLevel(level=logging.INFO)
+        return self._verb_level(args, **kwargs)
 
     def _verb_list(self, args, **kwargs):
         """
@@ -119,6 +140,19 @@ class Interpreter:
             raise ValueError(args)
         where = Path(where).expanduser().resolve()
         return self.manager.load_activities(where)
+
+    def _verb_level(self, args, **kwargs):
+        """
+        Get the current logging level.
+        """
+        levels = {
+            logging.DEBUG: 'DEBUG',
+            logging.INFO: 'INFO',
+            logging.WARNING: 'WARNING',
+            logging.ERROR: 'ERROR'
+        }
+        val = levels[logging.root.level]
+        return f'Logging level is now {val}'
 
     def _verb_new(self, args, **kwargs):
         """
@@ -179,3 +213,10 @@ class Interpreter:
             WARNING: unsaved data will be lost (use "save" first)
         """
         exit()
+
+    def _verb_warning(self, args, **kwargs):
+        """
+        Change logging level to WARNING
+        """
+        logging.getLogger().setLevel(logging.WARNING)
+        return self._verb_level(args, **kwargs)
