@@ -166,6 +166,12 @@ class Interpreter:
         where = Path(where).expanduser().resolve()
         return self.manager.save_activities(where)
 
+    def _verb_full(self, args, **kwargs):
+        """
+        Display all information for indicated activities.
+        """
+        return self.manager.display_full_activities(args, **kwargs)
+
     def _verb_quit(self, args, **kwargs):
         """
         Quit interactive interface.

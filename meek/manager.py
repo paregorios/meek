@@ -9,9 +9,13 @@ import json
 import logging
 from meek.activity import Activity
 import pathlib
+from pprint import pformat
+import re
 import shutil
 
 logger = logging.getLogger(__name__)
+rx_numeric = re.compile(r'^(?P<numeric>\d+)$')
+rx_numeric_range = re.compile(r'^(?P<start>\d+)\s*-\s*(?P<end>\d+)$')
 
 
 class Manager:
@@ -30,6 +34,49 @@ class Manager:
         self.activities[activity.id.hex] = activity
         self._index_activity(activity)
         return activity
+
+    def display_full_activities(self, args, **kwargs):
+        logger.info(f'display_full_activities() ignoring kwargs={kwargs}')
+        if args:
+            v = ' '.join(args)
+            m = rx_numeric.match(v)
+            if m:
+                return self.display_full_activity(int(m.group('numeric')))
+            m = rx_numeric_range.match(v)
+            if m:
+                msg = []
+                for i in range(int(m.group('start')), int(m.group('end')) + 1):
+                    msg.append(self.display_full_activity(i))
+                msg = '\n'.join(msg)
+                return msg
+        else:
+            return self.display_full_activity()
+
+    def display_full_activity(self, sequence=None):
+        if sequence is not None:
+            try:
+                a = self.current[sequence]
+            except IndexError:
+                logger.error(
+                    f'Sequence number {sequence} is not in current list.')
+                return self._format_list(self.current)
+        else:
+            try:
+                a = self.current[-1]
+            except IndexError:
+                logger.error(
+                    'No current list is defined. Try issuing the command  "list" first.')
+                return ''
+        d = a.asdict()
+        return pformat(d, indent=4, sort_dicts=True)
+
+    def new_activity(self, **kwargs):
+        """ Create a new activity and add it to the manager. """
+        a = Activity(**kwargs)
+        a = self.add_activity(a)
+        self._apply_keywords(a)
+        self.previous.append(a)
+        return f'Added {repr(a)}.'
 
     def _index_activity(self, activity):
         for idxk, idx in self.indexes.items():
@@ -52,46 +99,6 @@ class Manager:
                     finally:
                         idx[v].append(activity)
 
-    def new_activity(self, **kwargs):
-        """ Create a new activity and add it to the manager. """
-        a = Activity(**kwargs)
-        a = self.add_activity(a)
-        self.previous.append(a)
-        return f'Added {repr(a)}.'
-
-    def _filter_list_title(self, alist, filtervals):
-        result = set(alist)
-        for fv in filtervals:
-            result = result.intersection(self.indexes['title'][fv])
-        return list(result)
-
-    def _filter_list(self, alist, idxname, argv):
-        if isinstance(argv, str):
-            filtervals = [argv, ]
-        elif isinstance(argv, list):
-            filtervals = argv
-        else:
-            raise TypeError(f'argv: {type(argv)}={repr(argv)}')
-        result = set(alist)
-        for fv in [v.lower() for v in filtervals]:
-            idx = self.indexes[idxname]
-            try:
-                blist = idx[fv]
-            except KeyError:
-                blist = list()
-            result = result.intersection(blist)
-        return list(result)
-
-    def _get_list(self, **kwargs):
-        alist = list(self.activities.values())
-        if not kwargs:
-            return alist
-        for k, argv in kwargs.items():
-            if k == 'sort':
-                continue
-            alist = self._filter_list(alist, k, argv)
-        return alist
-
     def list_activities(self, **kwargs):
         alist = self._get_list(**kwargs)
         try:
@@ -104,6 +111,9 @@ class Manager:
             elif isinstance(sortkeys, list):
                 alist.sort(key=lambda a: [getattr(a, sk) for sk in sortkeys])
         self.current = alist
+        return self._format_list(alist)
+
+    def _format_list(self, alist):
         return '\n'.join([f'{i}: {repr(a)}' for i, a in enumerate(alist)])
 
     def load_activities(self, where: pathlib.Path):
@@ -148,3 +158,49 @@ class Manager:
                 json.dump(adata.asdict(), f, ensure_ascii=False, indent=4)
             del f
         return f'Wrote {len(self.activities)} JSON files at {where}.'
+
+    def _apply_keywords(self, activity):
+        keywords = {
+            'daily': {
+                'tags': 'daily'
+                # 'due':
+            }
+        }
+        awords = activity.words
+        for kw, actions in keywords.items():
+            if kw in awords:
+                for attrname, value in actions.items():
+                    setattr(activity, attrname, value)
+
+    def _filter_list_title(self, alist, filtervals):
+        result = set(alist)
+        for fv in filtervals:
+            result = result.intersection(self.indexes['title'][fv])
+        return list(result)
+
+    def _filter_list(self, alist, idxname, argv):
+        if isinstance(argv, str):
+            filtervals = [argv, ]
+        elif isinstance(argv, list):
+            filtervals = argv
+        else:
+            raise TypeError(f'argv: {type(argv)}={repr(argv)}')
+        result = set(alist)
+        for fv in [v.lower() for v in filtervals]:
+            idx = self.indexes[idxname]
+            try:
+                blist = idx[fv]
+            except KeyError:
+                blist = list()
+            result = result.intersection(blist)
+        return list(result)
+
+    def _get_list(self, **kwargs):
+        alist = list(self.activities.values())
+        if not kwargs:
+            return alist
+        for k, argv in kwargs.items():
+            if k == 'sort':
+                continue
+            alist = self._filter_list(alist, k, argv)
+        return alist
