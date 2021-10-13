@@ -65,6 +65,13 @@ class Interpreter:
         usage = getdoc(getattr(self, f'_verb_{verb}')).splitlines()[1:]
         return '\n'.join(usage)
 
+    def _verb_purge(self, args, **kwargs):
+        """
+        Clear all activities and indexes.
+            > purge
+        """
+        return self.manager.purge()
+
     def _verb_help(self, args, **kwargs):
         """
         Get help with available commands.
@@ -84,6 +91,23 @@ class Interpreter:
             entries = [f'{e[0]}:'.rjust(
                 longest+1) + f' {e[1]}' for e in entries]
             return '\n'.join(entries)
+
+    def _verb_load(self, args, **kwargs):
+        """
+        Load activities from storage.
+            > load
+              loads from default location
+            > load my/favorite/directory
+              loads from indicated path
+        """
+        if len(args) == 0:
+            where = WHERE_DEFAULT
+        elif len(args) == 1:
+            where = args
+        else:
+            raise ValueError(args)
+        where = Path(where).expanduser().resolve()
+        return self.manager.load_activities(where)
 
     def _verb_new(self, args, **kwargs):
         """
