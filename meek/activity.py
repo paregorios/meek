@@ -15,6 +15,7 @@ class Activity:
 
     def __init__(self, **kwargs):
         self._id = None
+        self._tags = set()
         self._title = None
         for k, arg in kwargs.items():
             # print(f'{k}: "{arg}"')
@@ -25,7 +26,8 @@ class Activity:
     def asdict(self):
         d = {
             'id': self.id.hex,
-            'title': self.title
+            'title': self.title,
+            'tags': self.tags
         }
         return d
 
@@ -43,6 +45,20 @@ class Activity:
             raise TypeError(f'{type(value)}: {repr(value)}')
 
     @ property
+    def tags(self):
+        return list(self._tags)
+
+    @ tags.setter
+    def tags(self, value):
+        if isinstance(value, str):
+            v = [value, ]
+        elif isinstance(value, list):
+            v = value
+        else:
+            raise TypeError(f'value: {type(value)}={repr(value)}')
+        self._tags.update(v)
+
+    @ property
     def title(self):
         return self._title
 
@@ -54,13 +70,17 @@ class Activity:
 
     @property
     def words(self):
-        attrs = [a for a in dir(self) if a != '_id' and a.startswith('_') and isinstance(
-            a, (str, list)) and not a.startswith('__')]
-        attrvals = [getattr(self, a) for a in attrs]
-        wset = set()
-        for attrval in attrvals:
-            wset.update(attrval.split())
-        return wset
+        attrs = [a for a in dir(self) if a != '_id' and a.startswith(
+            '_') and not a.startswith('__')]
+        attrvals = set()
+        for a in attrs:
+            v = getattr(self, a)
+            if isinstance(v, str):
+                attrvals.update(v.split())
+            elif isinstance(v, (list, set)):
+                for vv in v:
+                    attrvals.update(vv.split())
+        return attrvals
 
     def __str__(self):
         return f'{self.title}'

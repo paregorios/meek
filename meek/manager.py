@@ -160,6 +160,7 @@ class Manager:
         return f'Wrote {len(self.activities)} JSON files at {where}.'
 
     def _apply_keywords(self, activity):
+        logger.debug(f'_apply_keywords: activity={repr(activity)}')
         keywords = {
             'daily': {
                 'tags': 'daily'
@@ -167,6 +168,7 @@ class Manager:
             }
         }
         awords = activity.words
+        logger.debug(f'awords = {repr(awords)}')
         for kw, actions in keywords.items():
             if kw in awords:
                 for attrname, value in actions.items():
