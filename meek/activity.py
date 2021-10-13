@@ -59,7 +59,13 @@ class Activity:
         if isinstance(value, maya.MayaDT):
             dt = value
         elif isinstance(value, str):
-            dt = maya.when(value)
+            parts = value.split()
+            if parts[0] == 'next':
+                dt = maya.when(' '.join(parts[1:]), prefer_dates_from='future')
+            elif parts[0] == 'last':
+                dt = maya.when(' '.join(parts[1:]), prefer_dates_from='past')
+            else:
+                dt = maya.when(value)
         else:
             raise TypeError(f'value: {type(value)}={repr(value)}')
         today = maya.now()

@@ -178,6 +178,7 @@ class Interpreter:
             > new Take a nap due=today
             > new Take a nap due:today
             > new Take a nap due:2021-07-03
+            > new Take a nap due:'next monday'
             > new Take a nap tags=personal,home,health
         """
         if len(args) > 0:
