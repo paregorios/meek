@@ -82,7 +82,7 @@ class Manager:
             except IndexError:
                 logger.error(
                     f'Sequence number {sequence} is not in current context.')
-                return self._format_list(self.current)
+                return self.list_activities()
         else:
             try:
                 a = context[-1]
@@ -106,14 +106,11 @@ class Manager:
         try:
             sortkeys = kwargs['sort']
         except KeyError:
-            alist.sort(key=lambda a: a.title)
+            out_list = self._format_list(alist)
         else:
-            if isinstance(sortkeys, str):
-                alist.sort(key=lambda a: getattr(a, sortkeys))
-            elif isinstance(sortkeys, list):
-                alist.sort(key=lambda a: [getattr(a, sk) for sk in sortkeys])
-        self.current = alist
-        return self._format_list(alist)
+            out_list = self._format_list(alist, sort=sortkeys)
+        self.current = out_list
+        return '\n'.join(out_list)
 
     def list_due(self, qualifier, include_overdue=False):
         tz = str(get_localzone())
@@ -158,7 +155,9 @@ class Manager:
         else:
             alist = [a for a in alist if a.due >=
                      start_date and a.due <= end_date]
-        return self._format_list(alist)
+        out_list = self._format_list(alist)
+        self.current = out_list
+        return '\n'.join(out_list)
 
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'
@@ -249,8 +248,36 @@ class Manager:
             result = result.intersection(blist)
         return list(result)
 
-    def _format_list(self, alist):
-        return '\n'.join([f'{i}: {repr(a)}' for i, a in enumerate(alist)])
+    def _format_list(self, alist, attributes=['title', 'due'], sort=['due', 'title']):
+        if isinstance(sort, list):
+            if sort:
+                for sk in sort:
+                    if sk not in attributes:
+                        raise ValueError(
+                            f'sort key "{sk}" not in attributes ({attributes})')
+                alist.sort(key=lambda a: [getattr(a, sk)
+                           for sk in sort if getattr(a, sk) is not None])
+        elif sort is None:
+            pass
+        else:
+            raise TypeError(f'sort: {type(sort)} = {repr(sort)}')
+
+        out_list = list()
+        for i, a in enumerate(alist):
+            serial = f'{i}:'
+            for j, attrname in enumerate(attributes):
+                attrval = getattr(a, attrname)
+                if attrval is None or not attrval:
+                    continue
+                if attrname == 'title':
+                    if j == 0:
+                        serial += f' "{attrval}"'
+                    else:
+                        serial += f' title:"{attrval}"'
+                else:
+                    serial += f' {attrname}:{attrval}'
+            out_list.append(serial)
+        return out_list
 
     def _get_list(self, **kwargs):
         alist = list(self.activities.values())
