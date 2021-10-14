@@ -81,7 +81,7 @@ class Interpreter:
             > due today
             > due tomorrow
             > due this week
-            > due this month
+            > due next month
         """
         qualifier = ' '.join(args)
         return self.manager.list_due(qualifier)
@@ -189,6 +189,18 @@ class Interpreter:
             else:
                 raise ValueError(f'args: {args}, kwargs: {kwargs}')
         return self.manager.new_activity(**kwargs)
+
+    def _verb_overdue(self, args, **kwargs):
+        """
+        List unfinished activities by due date (including those previously due)
+            > overdue
+            > overdue today
+            > overdue tomorrow
+            > overdue this week
+            > overdue next month
+        """
+        qualifier = ' '.join(args)
+        return self.manager.list_due(qualifier, include_overdue=True)
 
     def _verb_purge(self, args, **kwargs):
         """

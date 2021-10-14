@@ -5,6 +5,7 @@ Manager for meek
 """
 
 from collections import deque
+from copy import copy
 import json
 import logging
 import maya
@@ -13,6 +14,8 @@ import pathlib
 from pprint import pformat
 import re
 import shutil
+from tzlocal import get_localzone
+
 
 logger = logging.getLogger(__name__)
 rx_numeric = re.compile(r'^(?P<numeric>\d+)$')
@@ -27,8 +30,7 @@ class Manager:
         self.current = list()
         self.indexes = {
             'title': {},
-            'words': {},
-            'due': {}
+            'words': {}
         }
 
     def add_activity(self, activity):
@@ -113,8 +115,50 @@ class Manager:
         self.current = alist
         return self._format_list(alist)
 
-    def list_due(self, qualifier):
-        lookup = {}
+    def list_due(self, qualifier, include_overdue=False):
+        tz = str(get_localzone())
+        q = qualifier.lower()
+        if q == '':
+            q = 'today'
+        if q in ['today', 'yesterday', 'tomorrow', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+            start_date = maya.when(q, tz)
+            end_date = copy(start_date)
+        elif q.startswith('this '):
+            q_ultima = q.split()[-1]
+            if q_ultima in ['week', 'month', 'year']:
+                today = maya.when('today', tz)
+                start_date = today.snap(f'@{q_ultima}')
+                kwargs = {f'{q_ultima}s': 1}
+                end_date = start_date.add(**kwargs).subtract(days=1)
+            else:
+                raise NotImplementedError(qualifier)
+        elif q.startswith('next '):
+            q_ultima = q.split()[-1]
+            logger.debug(f'q_ultima: {q_ultima}')
+            if q_ultima in ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']:
+                start_date = maya.when(
+                    q_ultima, tz, prefer_dates_from='future')
+                end_date = copy(start_date)
+            elif q_ultima in ['week', 'month', 'year']:
+                today = maya.when('today', tz)
+                start_date = today.snap(f'@{q_ultima}')
+                kwargs = {f'{q_ultima}s': 1}
+                start_date = start_date.add(**kwargs)
+                end_date = start_date.add(**kwargs).subtract(days=1)
+            else:
+                raise NotImplementedError(qualifier)
+        else:
+            raise NotImplementedError(qualifier)
+        start_date = start_date.iso8601().split('T')[0]
+        end_date = end_date.iso8601().split('T')[0]
+        alist = [a for a in list(self.activities.values())
+                 if a.due is not None and not a.complete]
+        if include_overdue:
+            alist = [a for a in alist if a.due <= end_date]
+        else:
+            alist = [a for a in alist if a.due >=
+                     start_date and a.due <= end_date]
+        return self._format_list(alist)
 
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'

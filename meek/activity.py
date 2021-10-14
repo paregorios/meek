@@ -11,6 +11,7 @@ from tzlocal import get_localzone
 from uuid import uuid4, UUID
 
 logger = logging.getLogger(__name__)
+tz = str(get_localzone())
 
 
 class Activity:
@@ -20,6 +21,7 @@ class Activity:
         self._tags = set()
         self._title = None
         self._due = None
+        self.complete = False
         for k, arg in kwargs.items():
             # print(f'{k}: "{arg}"')
             setattr(self, k, arg)
@@ -56,28 +58,19 @@ class Activity:
 
     @ due.setter
     def due(self, value):
-        if isinstance(value, maya.MayaDT):
-            dt = value
-        elif isinstance(value, str):
-            parts = value.split()
-            if parts[0] == 'next':
-                dt = maya.when(' '.join(parts[1:]), prefer_dates_from='future')
-            elif parts[0] == 'last':
-                dt = maya.when(' '.join(parts[1:]), prefer_dates_from='past')
-            else:
-                dt = maya.when(value)
+        if isinstance(value, str):
+            dt = maya.when(value, tz)
         else:
-            raise TypeError(f'value: {type(value)}={repr(value)}')
-        today = maya.now()
-        tz = str(get_localzone())
-        dt = dt.snap_tz('@d+6h', tz)
+            raise TypeError(
+                f'value: {type(value)} = {repr(value)}, expected {str}')
+        dt_s = dt.iso8601().split('T')[0]
+        today = maya.when('today', tz)
         today = today.snap_tz('@d+6h', tz)
-        logger.debug(f'due: {dt.rfc2822()}')
-        logger.debug(f'today: {today.rfc2822()}')
-        if dt < today:
+        today_s = today.iso8601().split('T')[0]
+        if dt_s < today_s:
             logger.warning(
-                f'Supplied due date ({dt.rfc2822()}) is earlier than today ({today.rfc2822()})')
-        self._due = dt
+                f'Supplied due date ({dt_s}) is earlier than today ({today_s})')
+        self._due = dt_s
 
     @ property
     def id(self):
