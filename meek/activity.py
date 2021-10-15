@@ -17,8 +17,11 @@ tz = str(get_localzone())
 
 class Event:
 
-    def __init__(self, what: str):
-        self.when = maya.now()
+    def __init__(self, what: str, when=None):
+        if when is None:
+            self.when = maya.now()
+        else:
+            self.when = maya.when(when)
         self.what = what
 
     def asdict(self):
@@ -41,8 +44,16 @@ class Activity:
         self.mode = mode
         # keeps events out of history if mode is not "live", e.g., reload from json
         for k, arg in kwargs.items():
-            # print(f'{k}: "{arg}"')
-            setattr(self, k, arg)
+            if k == 'history':
+                for d in arg:
+                    self._history.append(Event(**d))
+                continue
+            try:
+                setattr(self, k, arg)
+            except AttributeError as err:
+                msg = str(
+                    err) + f' "{k}". Desired value: {repr(arg)} of type {type(arg)}.'
+                raise AttributeError(msg)
         self.mode = 'live'
         if self._id is None:
             self._id = uuid4()
