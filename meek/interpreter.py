@@ -21,11 +21,12 @@ class Interpreter:
         self.manager = Manager()
         self.verbs = [a[6:] for a in dir(self) if a.startswith('_verb_')]
         self.aliases = {
-            'q': 'quit',
-            'h': 'help',
             '?': 'help',
             'all': 'list',
-            'ls': 'list'
+            'done': 'complete',
+            'h': 'help',
+            'ls': 'list',
+            'q': 'quit'
         }
 
     def parse(self, parts):
