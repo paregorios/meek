@@ -11,7 +11,7 @@ import logging
 import maya
 from meek.activity import Activity
 import pathlib
-from pprint import pformat
+from pprint import pformat, pprint
 import re
 import shutil
 from tzlocal import get_localzone
@@ -20,6 +20,13 @@ from tzlocal import get_localzone
 logger = logging.getLogger(__name__)
 rx_numeric = re.compile(r'^(?P<numeric>\d+)$')
 rx_numeric_range = re.compile(r'^(?P<start>\d+)\s*-\s*(?P<end>\d+)$')
+
+
+class UsageError(Exception):
+
+    def __init__(self, message: str = ''):
+        self.message = message
+        super().__init__(self.message)
 
 
 class Manager:
@@ -39,8 +46,48 @@ class Manager:
         self._index_activity(activity)
         return activity
 
+    def complete(self, args, **kwargs):
+        context = self.current
+        if len(context) == 0:
+            context = list(self.previous)
+        if len(context) == 0:
+            raise UsageError(
+                'No activity context is defined. First use "list", "due", "overdue" or another similar command.')
+        i = None
+        j = None
+        if args:
+            v = ' '.join(args)
+            m = rx_numeric.match(v)
+            if m:
+                i = int(m.group('numeric'))
+            if m is None:
+                m = rx_numeric_range.match(v)
+                if m:
+                    i = int(m.group('start'))
+                    j = int(m.group('end')) + 1
+                else:
+                    raise UsageError(f'Unrecognized argument {repr(v)}')
+        else:
+            raise UsageError(f'Missing argument: number or numeric range.')
+        for n in [i, j]:
+            if n is not None:
+                try:
+                    context[i]
+                except IndexError:
+                    msg = f'Numeric argument {n} is out of range in current context. Valid range is 0-{len(context)-1}.'
+                    raise UsageError(msg)
+        alist = [context[i]]
+        if j is not None:
+            alist = context[i:j]
+        for a in alist:
+            a.complete = True
+        if len(alist) == 1:
+            msg = f'Marked 1 activity as completed.'
+        else:
+            msg = f'Marked {len(alist)} activities as completed.'
+        return msg
+
     def display_full_activities(self, args, **kwargs):
-        logger.info(f'display_full_activities() ignoring kwargs={kwargs}')
         if args:
             v = ' '.join(args)
             if v in ['last', 'previous']:
@@ -109,7 +156,7 @@ class Manager:
             out_list = self._format_list(alist)
         else:
             out_list = self._format_list(alist, sort=sortkeys)
-        self.current = out_list
+        self.current = alist
         return '\n'.join(out_list)
 
     def list_due(self, qualifier, include_overdue=False):
@@ -156,7 +203,7 @@ class Manager:
             alist = [a for a in alist if a.due >=
                      start_date and a.due <= end_date]
         out_list = self._format_list(alist)
-        self.current = out_list
+        self.current = alist
         return '\n'.join(out_list)
 
     def load_activities(self, where: pathlib.Path):

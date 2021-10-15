@@ -21,7 +21,7 @@ class Activity:
         self._tags = set()
         self._title = None
         self._due = None
-        self.complete = False
+        self._complete = False
         for k, arg in kwargs.items():
             # print(f'{k}: "{arg}"')
             setattr(self, k, arg)
@@ -32,8 +32,9 @@ class Activity:
         d = {
             'id': self.id.hex,
             'title': self.title,
+            'complete': self.complete
         }
-        for attrname in ['due', 'tags']:
+        for attrname in ['due', 'tags', 'complete']:
             v = getattr(self, attrname)
             if v is None:
                 continue
@@ -51,6 +52,21 @@ class Activity:
                 raise TypeError(f'activity.{attrname}: {type(v)} = {repr(v)}')
             d[attrname] = val
         return d
+
+    @ property
+    def complete(self):
+        return self._complete
+
+    @ complete.setter
+    def complete(self, value):
+        if isinstance(value, bool):
+            v = value
+        elif isinstance(value, int):
+            v = bool(value)
+        else:
+            raise TypeError(
+                f'Value ({repr(value)} is {type(value)}. Expected {bool}.')
+        self._complete = v
 
     @ property
     def due(self):

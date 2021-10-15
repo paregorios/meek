@@ -6,7 +6,7 @@ Command interpreter for meek
 
 from inspect import getdoc
 import logging
-from meek.manager import Manager
+from meek.manager import Manager, UsageError
 from pathlib import Path
 import readline
 
@@ -40,7 +40,11 @@ class Interpreter:
             except KeyError:
                 return f'Unrecognized verb "{verb}"'
         args, kwargs = self._objectify(objects)
-        return getattr(self, f'_verb_{verb}')(args, **kwargs)
+        msg = getattr(self, f'_verb_{verb}')(args, **kwargs)
+        if msg is not None:
+            return msg
+        else:
+            return ''
 
     def _objectify(self, objects):
         args = []
@@ -62,10 +66,28 @@ class Interpreter:
                 args.append(o)
         return (args, kwargs)
 
+    def _uerror(self, verb: str, exception: Exception):
+        """Handle usage error."""
+        msg = str(exception)
+        print(f'Error: {msg}')
+        self._usage(verb)
+
     def _usage(self, verb):
         """Print usage for indicated command"""
         usage = getdoc(getattr(self, f'_verb_{verb}')).splitlines()[1:]
         return '\n'.join(usage)
+
+    def _verb_complete(self, args, **kwargs):
+        """
+        Mark activities as complete.
+        Requires a context (i.e., first do "list", "overdue", etc.)
+        > complete 1
+        > complete 3-4
+        """
+        try:
+            return self.manager.complete(args, **kwargs)
+        except UsageError as err:
+            self._uerror('complete', err)
 
     def _verb_debug(self, args, **kwargs):
         """
@@ -100,7 +122,12 @@ class Interpreter:
             > help {verb} (prints usage for the indicated verb)
         """
         if args:
-            return self._usage(' '.join(args))
+            verb = ' '.join(args)
+            try:
+                msg = getdoc(getattr(self, f'_verb_{verb}'))
+            except AttributeError:
+                msg = f'Error: Unrecognized verb {verb}. Try "help" to get a list of verbs.'
+            return msg
         else:
             entries = [
                 (
