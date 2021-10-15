@@ -252,22 +252,52 @@ class Manager:
     def _apply_keywords(self, activity):
         logger.debug(f'_apply_keywords: activity={repr(activity)}')
         keywords = {
+            'annually': {
+                'due': 'today',
+                'interval': 'year'
+            },
             'daily': {
-                'tags': 'daily'
-                # 'due':
+                'due': 'today',
+                'interval': 'day'
+            },
+            'medicate': {
+                'tags': 'health'
             },
             'medicated': {
                 'tags': 'health'
             },
-            'meds': {
+            'medicine': {
                 'tags': 'health'
-            }
+            },
+            'meds': {
+                'tags': 'health',
+            },
+            'monthly': {
+                'due': 'today',
+                'interval': 'month'
+            },
+            'quarterly': {
+                'due': 'today',
+                'interval': 'quarter'
+            },
+            'weekly': {
+                'due': 'today',
+                'interval': 'week'
+            },
+            'yearly': {
+                'due': 'today',
+                'interval': 'year'
+            },
         }
         awords = activity.words
         logger.debug(f'awords = {repr(awords)}')
         for kw, actions in keywords.items():
             if kw in awords:
                 for attrname, value in actions.items():
+                    if attrname in ['due']:
+                        v = getattr(activity, attrname)
+                        if v is not None:
+                            continue
                     setattr(activity, attrname, value)
 
     def _filter_list_title(self, alist, filtervals):

@@ -41,6 +41,9 @@ class Activity:
         self._due = None
         self._complete = False
         self._history = deque()
+        self.supported_intervals = [
+            'none', 'day', 'workday', 'week', 'month', 'quarter', 'year']
+        self._interval = None
         self.mode = mode
         # keeps events out of history if mode is not "live", e.g., reload from json
         for k, arg in kwargs.items():
@@ -64,7 +67,7 @@ class Activity:
             'title': self.title,
             'complete': self.complete
         }
-        for attrname in ['due', 'tags', 'complete']:
+        for attrname in ['due', 'tags', 'interval']:
             v = getattr(self, attrname)
             if v is None:
                 continue
@@ -103,6 +106,7 @@ class Activity:
         self._complete = v
         if self.mode == 'live':
             self._append_event(f'complete={self.complete}')
+        self._due_interval()
 
     @ property
     def due(self):
@@ -112,9 +116,11 @@ class Activity:
     def due(self, value):
         if isinstance(value, str):
             dt = maya.when(value, tz)
+        elif isinstance(value, maya.MayaDT):
+            dt = value
         else:
             raise TypeError(
-                f'value: {type(value)} = {repr(value)}, expected {str}')
+                f'value: {type(value)} = {repr(value)}, expected {str} or {maya.MayaDT}')
         dt_s = dt.iso8601().split('T')[0]
         today = maya.when('today', tz)
         today = today.snap_tz('@d+6h', tz)
@@ -145,6 +151,27 @@ class Activity:
         if self.mode == 'live':
             self._append_event(f'id={self.id}')
 
+    # interval: how soon to make due after completion
+    @ property
+    def interval(self):
+        return self._interval
+
+    @ interval.setter
+    def interval(self, value):
+        if not isinstance(value, str):
+            raise TypeError(f'value: {type(value)}: {repr(value)}')
+        if value not in self.supported_intervals:
+            support_string = ', '.join(
+                [f'"{s}"' for s in self.supported_intervals])
+            raise ValueError(
+                f'Unexpected interval value "{value}". Supported values are: {support_string}.')
+        if value == 'none':
+            self._interval = None
+        else:
+            self._interval = value
+        if self.mode == 'live':
+            self._append_event(f'interval={self.interval}')
+
     @ property
     def tags(self):
         return list(self._tags)
@@ -173,7 +200,7 @@ class Activity:
         if self.mode == 'live':
             self._append_event(f'title={self.title}')
 
-    @property
+    @ property
     def words(self):
         attrs = [a for a in dir(self) if a != '_id' and a.startswith(
             '_') and not a.startswith('__')]
@@ -190,6 +217,19 @@ class Activity:
     def _append_event(self, what: str):
         e = Event(what)
         self._history.append(e)
+
+    def _due_interval(self):
+        """Reset due date if an interval is set."""
+        if self.interval is None:
+            return
+        if self.interval == 'quarter':
+            kwargs = {'months': 3}
+        else:
+            kwargs = {f'{self.interval}s': 1}
+        today = maya.when('today', tz)
+        when = today.add(**kwargs)
+        self.due = when
+        self.complete = False
 
     def __str__(self):
         return f'{self.title}'
