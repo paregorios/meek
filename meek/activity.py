@@ -4,6 +4,7 @@
 Python 3 package template (changeme)
 """
 
+from collections import deque
 from meek.norm import norm
 import logging
 import maya
@@ -14,17 +15,35 @@ logger = logging.getLogger(__name__)
 tz = str(get_localzone())
 
 
+class Event:
+
+    def __init__(self, what: str):
+        self.when = maya.now()
+        self.what = what
+
+    def asdict(self):
+        d = {
+            'what': self.what,
+            'when': self.when.iso8601()
+        }
+        return d
+
+
 class Activity:
 
-    def __init__(self, **kwargs):
+    def __init__(self, mode='live', **kwargs):
         self._id = None
         self._tags = set()
         self._title = None
         self._due = None
         self._complete = False
+        self._history = deque()
+        self.mode = mode
+        # keeps events out of history if mode is not "live", e.g., reload from json
         for k, arg in kwargs.items():
             # print(f'{k}: "{arg}"')
             setattr(self, k, arg)
+        self.mode = 'live'
         if self._id is None:
             self._id = uuid4()
 
@@ -48,9 +67,13 @@ class Activity:
                 val = list(v)
             elif isinstance(v, maya.MayaDT):
                 val = v.iso8601()
+            elif isinstance(v, bool):
+                val = v
             else:
                 raise TypeError(f'activity.{attrname}: {type(v)} = {repr(v)}')
             d[attrname] = val
+        if len(self._history) != 0:
+            d['history'] = [e.asdict() for e in self.history]
         return d
 
     @ property
@@ -67,6 +90,8 @@ class Activity:
             raise TypeError(
                 f'Value ({repr(value)} is {type(value)}. Expected {bool}.')
         self._complete = v
+        if self.mode == 'live':
+            self._append_event(f'complete={self.complete}')
 
     @ property
     def due(self):
@@ -87,6 +112,12 @@ class Activity:
             logger.warning(
                 f'Supplied due date ({dt_s}) is earlier than today ({today_s})')
         self._due = dt_s
+        if self.mode == 'live':
+            self._append_event(f'due={self.due}')
+
+    @ property
+    def history(self):
+        return list(self._history)
 
     @ property
     def id(self):
@@ -100,6 +131,8 @@ class Activity:
             self._id = UUID(value)
         else:
             raise TypeError(f'{type(value)}: {repr(value)}')
+        if self.mode == 'live':
+            self._append_event(f'id={self.id}')
 
     @ property
     def tags(self):
@@ -114,6 +147,8 @@ class Activity:
         else:
             raise TypeError(f'value: {type(value)}={repr(value)}')
         self._tags.update(v)
+        if self.mode == 'live':
+            self._append_event(f'tags={self.tags}')
 
     @ property
     def title(self):
@@ -124,6 +159,8 @@ class Activity:
         if not isinstance(value, str):
             raise TypeError(f'{type(value)}: {repr(value)}')
         self._title = norm(value)
+        if self.mode == 'live':
+            self._append_event(f'title={self.title}')
 
     @property
     def words(self):
@@ -138,6 +175,10 @@ class Activity:
                 for vv in v:
                     attrvals.update(vv.split())
         return attrvals
+
+    def _append_event(self, what: str):
+        e = Event(what)
+        self._history.append(e)
 
     def __str__(self):
         return f'{self.title}'

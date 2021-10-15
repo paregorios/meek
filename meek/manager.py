@@ -215,7 +215,7 @@ class Manager:
                     with open(p, 'r', encoding='utf-8') as f:
                         adict = json.load(f)
                     del f
-                    a = Activity(**adict)
+                    a = Activity(**adict, creation_mode='memorex')
                     self.add_activity(a)
                     i += 1
         return f'Loaded {i} activities from JSON files at {where}.'
