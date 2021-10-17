@@ -46,7 +46,7 @@ class Manager:
         self._index_activity(activity)
         return activity
 
-    def complete(self, args, **kwargs):
+    def complete_activity(self, args, **kwargs):
         context = self.current
         if len(context) == 0:
             context = list(self.previous)
@@ -140,36 +140,6 @@ class Manager:
         d = a.asdict()
         return pformat(d, indent=4, sort_dicts=True)
 
-    def modify_activity(self, args, **kwargs):
-        """ Modify an existing activity. """
-        i, j, other = self._comprehend_args(args)
-        if i is None:
-            raise UsageError(
-                'The first argument must be a number or numeric range.')
-        alist = self._contextualize(i, j)
-        if other:
-            for val in other:
-                if val in ['complete', 'done']:
-                    kwargs['complete'] = True
-                else:
-                    raise UsageError(f'Unrecognized argument {repr(val)}.')
-        for a in alist:
-            for k, arg in kwargs.items():
-                setattr(a, k, arg)
-        out_list = self._format_list(alist)
-        self.current = alist
-        msg = f'Modified {len(alist)} activities:\n'
-        msg += '\n'.join(out_list)
-        return msg
-
-    def new_activity(self, **kwargs):
-        """ Create a new activity and add it to the manager. """
-        a = Activity(**kwargs)
-        a = self.add_activity(a)
-        self._apply_keywords(a)
-        self.previous.append(a)
-        return f'Added {repr(a)}.'
-
     def list_activities(self, **kwargs):
         alist = self._get_list(**kwargs)
         try:
@@ -241,6 +211,36 @@ class Manager:
                     self.add_activity(a)
                     i += 1
         return f'Loaded {i} activities from JSON files at {where}.'
+
+    def modify_activity(self, args, **kwargs):
+        """ Modify an existing activity. """
+        i, j, other = self._comprehend_args(args)
+        if i is None:
+            raise UsageError(
+                'The first argument must be a number or numeric range.')
+        alist = self._contextualize(i, j)
+        if other:
+            for val in other:
+                if val in ['complete', 'done']:
+                    kwargs['complete'] = True
+                else:
+                    raise UsageError(f'Unrecognized argument {repr(val)}.')
+        for a in alist:
+            for k, arg in kwargs.items():
+                setattr(a, k, arg)
+        out_list = self._format_list(alist)
+        self.current = alist
+        msg = f'Modified {len(alist)} activities:\n'
+        msg += '\n'.join(out_list)
+        return msg
+
+    def new_activity(self, **kwargs):
+        """ Create a new activity and add it to the manager. """
+        a = Activity(**kwargs)
+        a = self.add_activity(a)
+        self._apply_keywords(a)
+        self.previous.append(a)
+        return f'Added {repr(a)}.'
 
     def purge(self):
         count = len(self.activities)
@@ -362,12 +362,6 @@ class Manager:
                     other.insert(0, a)
         return (i, j, other)
 
-    def _filter_list_title(self, alist, filtervals):
-        result = set(alist)
-        for fv in filtervals:
-            result = result.intersection(self.indexes['title'][fv])
-        return list(result)
-
     def _filter_list(self, alist, idxname, argv):
         if isinstance(argv, str):
             filtervals = [argv, ]
@@ -385,6 +379,12 @@ class Manager:
             except KeyError:
                 blist = list()
             result = result.intersection(blist)
+        return list(result)
+
+    def _filter_list_title(self, alist, filtervals):
+        result = set(alist)
+        for fv in filtervals:
+            result = result.intersection(self.indexes['title'][fv])
         return list(result)
 
     def _format_list(self, alist, attributes=['title', 'due'], sort=['due', 'title']):

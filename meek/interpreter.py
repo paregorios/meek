@@ -88,7 +88,7 @@ class Interpreter:
         > complete 3-4
         """
         try:
-            return self.manager.complete(args, **kwargs)
+            return self.manager.complete_activity(args, **kwargs)
         except UsageError as err:
             self._uerror('complete', err)
 
@@ -117,6 +117,12 @@ class Interpreter:
         """
         logging.getLogger().setLevel(level=logging.ERROR)
         return self._verb_level(args, **kwargs)
+
+    def _verb_full(self, args, **kwargs):
+        """
+        Display all information for indicated activities.
+        """
+        return self.manager.display_full_activities(args, **kwargs)
 
     def _verb_help(self, args, **kwargs):
         """
@@ -149,6 +155,19 @@ class Interpreter:
         """
         logging.getLogger().setLevel(level=logging.INFO)
         return self._verb_level(args, **kwargs)
+
+    def _verb_level(self, args, **kwargs):
+        """
+        Get the current logging level.
+        """
+        levels = {
+            logging.DEBUG: 'DEBUG',
+            logging.INFO: 'INFO',
+            logging.WARNING: 'WARNING',
+            logging.ERROR: 'ERROR'
+        }
+        val = levels[logging.root.level]
+        return f'Logging level is now {val}'
 
     def _verb_list(self, args, **kwargs):
         """
@@ -184,19 +203,6 @@ class Interpreter:
             raise ValueError(args)
         where = Path(where).expanduser().resolve()
         return self.manager.load_activities(where)
-
-    def _verb_level(self, args, **kwargs):
-        """
-        Get the current logging level.
-        """
-        levels = {
-            logging.DEBUG: 'DEBUG',
-            logging.INFO: 'INFO',
-            logging.WARNING: 'WARNING',
-            logging.ERROR: 'ERROR'
-        }
-        val = levels[logging.root.level]
-        return f'Logging level is now {val}'
 
     def _verb_modify(self, args, **kwargs):
         """
@@ -255,6 +261,14 @@ class Interpreter:
         """
         return self.manager.purge()
 
+    def _verb_quit(self, args, **kwargs):
+        """
+        Quit interactive interface.
+            > quit
+            WARNING: unsaved data will be lost (use "save" first)
+        """
+        exit()
+
     def _verb_save(self, args, **kwargs):
         """
         Save activities to storage.
@@ -272,20 +286,6 @@ class Interpreter:
             raise ValueError(args)
         where = Path(where).expanduser().resolve()
         return self.manager.save_activities(where)
-
-    def _verb_full(self, args, **kwargs):
-        """
-        Display all information for indicated activities.
-        """
-        return self.manager.display_full_activities(args, **kwargs)
-
-    def _verb_quit(self, args, **kwargs):
-        """
-        Quit interactive interface.
-            > quit
-            WARNING: unsaved data will be lost (use "save" first)
-        """
-        exit()
 
     def _verb_warning(self, args, **kwargs):
         """
