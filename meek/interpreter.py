@@ -99,6 +99,12 @@ class Interpreter:
         logging.getLogger().setLevel(level=logging.DEBUG)
         return self._verb_level(args, **kwargs)
 
+    def _verb_delete(self, args, **kwargs):
+        try:
+            return self.manager.delete_activity(args, **kwargs)
+        except UsageError as err:
+            self._uerror('delete', err)
+
     def _verb_due(self, args, **kwargs):
         """
         List unfinished activities by due date.

@@ -87,6 +87,24 @@ class Manager:
             msg = f'Marked {len(alist)} activities as completed.'
         return msg
 
+    def delete_activity(self, args, **kwargs):
+        """ Delete an existing activity. """
+        i, j, other = self._comprehend_args(args)
+        if i is None:
+            raise UsageError(
+                'The first argument must be a number or numeric range.')
+        if other:
+            raise UsageError(
+                f'Unexpected additional arguments: {repr(other)}.')
+        alist = self._contextualize(i, j)
+        id_list = [a.id for a in alist]
+        for id in id_list:
+            self.activities.pop(id.hex)
+        if len(id_list) == 1:
+            return 'Deleted 1 activity.'
+        else:
+            return f'Deleted {len(id_list)} activities.'
+
     def display_full_activities(self, args, **kwargs):
         if args:
             v = ' '.join(args)
