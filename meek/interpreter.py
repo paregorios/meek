@@ -23,11 +23,28 @@ class Interpreter:
         self.aliases = {
             '?': 'help',
             'all': 'list',
+            'c': 'complete',
+            'del': 'delete',
             'done': 'complete',
             'h': 'help',
             'ls': 'list',
-            'q': 'quit'
+            'm': 'modify',
+            'n': 'new',
+            '!': 'overdue',
+            'q': 'quit',
+            'rm': 'delete',
+            's': 'save'
         }
+        self.reverse_aliases = {}
+        for a, v in self.aliases.items():
+            try:
+                self.reverse_aliases[v]
+            except KeyError:
+                self.reverse_aliases[v] = list()
+            finally:
+                self.reverse_aliases[v].append(a)
+        for v, aliases in self.reverse_aliases.items():
+            aliases.sort()
 
     def parse(self, parts):
         verb = parts[0]
@@ -100,6 +117,11 @@ class Interpreter:
         return self._verb_level(args, **kwargs)
 
     def _verb_delete(self, args, **kwargs):
+        """
+        Delete indicated activities.
+            > delete 2
+            > delete 3-5
+        """
         try:
             return self.manager.delete_activity(args, **kwargs)
         except UsageError as err:
@@ -142,6 +164,14 @@ class Interpreter:
                 msg = getdoc(getattr(self, f'_verb_{verb}'))
             except AttributeError:
                 msg = f'Error: Unrecognized verb {verb}. Try "help" to get a list of verbs.'
+            else:
+                try:
+                    aliases = self.reverse_aliases[verb]
+                except KeyError:
+                    pass
+                else:
+                    aliases = ', '.join(aliases)
+                    msg += f'\nAliases: {aliases}'
             return msg
         else:
             entries = [
