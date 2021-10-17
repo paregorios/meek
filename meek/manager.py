@@ -140,6 +140,28 @@ class Manager:
         d = a.asdict()
         return pformat(d, indent=4, sort_dicts=True)
 
+    def modify_activity(self, args, **kwargs):
+        """ Modify an existing activity. """
+        i, j, other = self._comprehend_args(args)
+        if i is None:
+            raise UsageError(
+                'The first argument must be a number or numeric range.')
+        alist = self._contextualize(i, j)
+        if other:
+            for val in other:
+                if val in ['complete', 'done']:
+                    kwargs['complete'] = True
+                else:
+                    raise UsageError(f'Unrecognized argument {repr(val)}.')
+        for a in alist:
+            for k, arg in kwargs.items():
+                setattr(a, k, arg)
+        out_list = self._format_list(alist)
+        self.current = alist
+        msg = f'Modified {len(alist)} activities:\n'
+        msg += '\n'.join(out_list)
+        return msg
+
     def new_activity(self, **kwargs):
         """ Create a new activity and add it to the manager. """
         a = Activity(**kwargs)
@@ -299,6 +321,46 @@ class Manager:
                         if v is not None:
                             continue
                     setattr(activity, attrname, value)
+
+    def _contextualize(self, i, j):
+        for context in [self.current, list(self.previous)]:
+            if context:
+                vals = [i, ]
+                if j is not None:
+                    vals.append(j)
+                for n in vals:
+                    try:
+                        context[n]
+                    except IndexError:
+                        raise UsageError(
+                            f'Supplied index {n} is not in context (0-{len(context)})')
+                if j is None:
+                    alist = [context[i], ]
+                else:
+                    alist = context[i:j]
+                return alist
+
+        raise UsageError(f'No activity context is defined.')
+
+    def _comprehend_args(self, args):
+        i = None
+        j = None
+        other = []
+        if args:
+            a = args[0]
+            if len(args) > 1:
+                other = args[1:]
+            m = rx_numeric.match(a)
+            if m:
+                i = int(m.group('numeric'))
+            if m is None:
+                m = rx_numeric_range.match(a)
+                if m:
+                    i = int(m.group('start'))
+                    j = int(m.group('end')) + 1
+                else:
+                    other.insert(0, a)
+        return (i, j, other)
 
     def _filter_list_title(self, alist, filtervals):
         result = set(alist)

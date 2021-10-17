@@ -96,7 +96,9 @@ class Activity:
 
     @ complete.setter
     def complete(self, value):
-        if isinstance(value, bool):
+        if value is None:
+            v = False
+        elif isinstance(value, bool):
             v = value
         elif isinstance(value, int):
             v = bool(value)
@@ -178,13 +180,16 @@ class Activity:
 
     @ tags.setter
     def tags(self, value):
-        if isinstance(value, str):
-            v = [value, ]
-        elif isinstance(value, list):
-            v = value
+        if value is None:
+            self._tags = set()
         else:
-            raise TypeError(f'value: {type(value)}={repr(value)}')
-        self._tags.update(v)
+            if isinstance(value, str):
+                v = [value, ]
+            elif isinstance(value, list):
+                v = value
+            else:
+                raise TypeError(f'value: {type(value)}={repr(value)}')
+            self._tags.update(v)
         if self.mode == 'live':
             self._append_event(f'tags={self.tags}')
 

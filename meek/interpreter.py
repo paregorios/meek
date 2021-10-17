@@ -55,12 +55,14 @@ class Interpreter:
             for delim in [':', '=']:
                 if delim in o:
                     parts = o.split(delim)
-                    if len(parts) != 2:
-                        raise RuntimeError(o)
                     k = parts[0]
-                    v = parts[1]
-                    if ',' in v:
-                        v = v.split(',')
+                    try:
+                        v = parts[1]
+                    except IndexError:
+                        v = None
+                    else:
+                        if ',' in v:
+                            v = v.split(',')
                     kwargs[k] = v
                     break
             if k is None:
@@ -195,6 +197,22 @@ class Interpreter:
         }
         val = levels[logging.root.level]
         return f'Logging level is now {val}'
+
+    def _verb_modify(self, args, **kwargs):
+        """
+        Make modifications to selected activities.
+            > modify 0 title:'go to the beach'
+            > modify 1-3 due:tomorrow
+            > modify 7-8 complete
+            > modify 2 tags:
+              (clears tags)
+            > modify 2 tags:fish
+            > modify 3 tags:cat,dog
+        """
+        try:
+            return self.manager.modify_activity(args, **kwargs)
+        except UsageError as err:
+            self._uerror('modify', err)
 
     def _verb_new(self, args, **kwargs):
         """
