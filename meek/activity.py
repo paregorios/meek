@@ -118,7 +118,18 @@ class Activity:
     @ due.setter
     def due(self, value):
         if isinstance(value, str):
-            dt = maya.when(value, tz)
+            v = value
+            epoch = 'current_period'
+            if value == 'this week':
+                epoch = 'future'
+                v = 'friday'
+            # TBD: this month, this quarter, this year
+            # don't we do this somewhere else already?!?
+            elif value.startswith('next '):
+                epoch = 'future'
+            elif value.startswith('last '):
+                epoch = 'past'
+            dt = maya.when(v, tz, prefer_dates_from=epoch)
         elif isinstance(value, maya.MayaDT):
             dt = value
         else:
