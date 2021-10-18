@@ -108,7 +108,8 @@ class Activity:
         self._complete = v
         if self.mode == 'live':
             self._append_event(f'complete={self.complete}')
-        self._due_interval()
+        if self._complete:
+            self._due_interval()
 
     @ property
     def due(self):
