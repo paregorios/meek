@@ -141,7 +141,7 @@ class Activity:
         today_s = today.iso8601().split('T')[0]
         if dt_s < today_s:
             logger.warning(
-                f'Supplied due date ({dt_s}) is earlier than today ({today_s})')
+                f'Supplied due date ({dt_s}) is earlier than today ({today_s}): "{self.title}"')
         self._due = dt_s
         if self.mode == 'live':
             self._append_event(f'due={self.due}')
