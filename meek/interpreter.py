@@ -23,6 +23,7 @@ class Interpreter:
         self.aliases = {
             '?': 'help',
             'all': 'list',
+            'bump': 'reschedule',
             'c': 'complete',
             'del': 'delete',
             'done': 'complete',
@@ -304,6 +305,23 @@ class Interpreter:
             WARNING: unsaved data will be lost (use "save" first)
         """
         exit()
+
+    def _verb_reschedule(self, args, **kwargs):
+        """
+        Reschedule a "due" activity.
+        Requires a context (i.e., first do "list", "overdue", etc.)
+        > reschedule 1
+          increments due date by one day
+        > reschedule 1 today
+          i.e. modify 1 due:today
+        > reschedule 2-3 tomorrow
+        > reschedule 5 monday
+        > reschedule 7 weeks:2
+        """
+        try:
+            return self.manager.reschedule_activity(args, **kwargs)
+        except UsageError as err:
+            self._uerror('modify', err)
 
     def _verb_save(self, args, **kwargs):
         """

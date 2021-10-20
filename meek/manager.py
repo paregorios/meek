@@ -6,6 +6,7 @@ Manager for meek
 
 from collections import deque
 from copy import copy
+from meek.dates import comprehend_date
 import json
 import logging
 import maya
@@ -266,6 +267,53 @@ class Manager:
         count = len(self.activities)
         self.activities = dict()
         return f'Purged {count} activities from memory.'
+
+    def reschedule_activity(self, args, **kwargs):
+        """Change the due date on an activity."""
+        i, j, other = self._comprehend_args(args)
+        if i is None:
+            raise UsageError(
+                'The first argument must be a number or numeric range.')
+        tz = str(get_localzone())
+        alist = self._contextualize(i, j)
+        success = 0
+        for idx, a in enumerate(alist):
+            if a.due is None:
+                logger.error(
+                    f'Activity {idx}:"{a.title}" has no due date. Reschedule command ignored.')
+                continue
+            due_dt = maya.when(a.due, tz)
+            if len(other) == 0:
+                if len(kwargs) == 0:
+                    due_dt = due_dt.add(days=1)
+                elif len(kwargs) == 1:
+                    k = list(kwargs.keys())[0]
+                    if k in ['days', 'weeks', 'months', 'years']:
+                        due_dt = due_dt.add(**kwargs)
+                    else:
+                        raise NotImplementedError(f'kwargs={repr(kwargs)}')
+                else:
+                    raise NotImplementedError(f'kwargs={repr(kwargs)}')
+            else:
+                arg = ' '.join(other)
+                start_dt, end_dt = comprehend_date(arg)
+                if end_dt is not None:
+                    due_dt = end_dt
+                elif start_dt is not None:
+                    due_dt = start_dt
+                else:
+                    raise NotImplementedError(f'arg={arg}')
+            a.due = due_dt
+            success += 1
+        if len(alist) <= 1:
+            noun = 'activity'
+        else:
+            noun = 'activities'
+        if success == 0:
+            msg = f'Unable to reschedule {len(alist)} {noun}.'
+        else:
+            msg = f'Rescheduled {success} out of {len(alist)} {noun}.'
+        return msg
 
     def save_activities(self, where: pathlib.Path):
         if len(self.activities) == 0:
