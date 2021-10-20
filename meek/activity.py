@@ -5,6 +5,7 @@ Python 3 package template (changeme)
 """
 
 from collections import deque
+from meek.dates import comprehend_date, iso_datestamp
 from meek.norm import norm
 import logging
 import maya
@@ -39,6 +40,7 @@ class Activity:
         self._tags = set()
         self._title = None
         self._due = None
+        self._not_before = None
         self._complete = False
         self._history = deque()
         self.supported_intervals = [
@@ -185,6 +187,18 @@ class Activity:
             self._interval = value
         if self.mode == 'live':
             self._append_event(f'interval={self.interval}')
+
+    # not before: keep out of most listings until this date
+    @ property
+    def not_before(self):
+        return self._not_before
+
+    @ not_before.setter
+    def not_before(self, value):
+        start_dt, end_dt = comprehend_date(value)
+        self._not_before = iso_datestamp(start_dt)
+        if self.mode == 'live':
+            self._append_event(f'not_before={self.due}')
 
     @ property
     def tags(self):

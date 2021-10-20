@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Python 3 tests template (changeme)"""
+"""Test the meek activity module."""
 
 import logging
+from meek.activity import Activity
 from nose.tools import assert_equal, assert_false, assert_true, raises
 from pathlib import Path
 from unittest import TestCase
@@ -21,7 +22,7 @@ def teardown_module():
     pass
 
 
-class Test_This(TestCase):
+class Test_Activity(TestCase):
 
     def setUp(self):
         """Change me"""
@@ -31,6 +32,11 @@ class Test_This(TestCase):
         """Change me"""
         pass
 
-    def test_a(self):
-        """Change me"""
-        pass
+    def test_not_before(self):
+        s = '2067-10-20T08:00'
+        kwargs = {
+            'title': 'test activity',
+            'not_before': s
+        }
+        a = Activity(**kwargs)
+        assert_equal(s.split('T')[0], a.not_before)

@@ -13,9 +13,16 @@ from tzlocal import get_localzone
 logger = logging.getLogger(__name__)
 
 
+def iso_datestamp(dt: maya.MayaDT):
+    if isinstance(dt, maya.MayaDT):
+        return dt.iso8601().split('T')[0]
+    else:
+        raise TypeError(f'Unexpected value for dt: {type(dt)}={repr(dt)}')
+
+
 def comprehend_date(when):
     if isinstance(when, maya.MayaDT):
-        return when
+        return (when, None)
     elif isinstance(when, str):
         pass
     else:
