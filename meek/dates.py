@@ -28,8 +28,22 @@ def comprehend_date(when):
         q = 'today'
     else:
         q = when
-    if q in ['today', 'yesterday', 'tomorrow', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+    days_of_week = ['monday', 'tuesday', 'wednesday',
+                    'thursday', 'friday', 'saturday', 'sunday']
+    if q in ['today', 'yesterday', 'tomorrow']:
         start_date = maya.when(q, tz)
+        end_date = copy(start_date)
+    elif q in days_of_week:
+        today = maya.when('today', tz)
+        dow = days_of_week.index(q) + 1
+        print(f'today.weekday: {today.weekday}')
+        print(f'dow: {dow}')
+        if dow > today.weekday:
+            print('foo')
+            start_date = maya.when(q, tz, prefer_dates_from='future')
+        else:
+            print('bar')
+            start_date = maya.when(q, tz)
         end_date = copy(start_date)
     elif q.startswith('this '):
         q_ultima = q.split()[-1]

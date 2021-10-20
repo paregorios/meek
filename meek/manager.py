@@ -10,6 +10,7 @@ import json
 import logging
 import maya
 from meek.activity import Activity
+from meek.dates import comprehend_date
 import pathlib
 from pprint import pformat, pprint
 import re
@@ -172,6 +173,7 @@ class Manager:
     def list_due(self, qualifier, include_overdue=False):
         tz = str(get_localzone())
         q = qualifier.lower()
+        # start_date, end_date = comprehend_date(q)
         if q == '':
             q = 'today'
         if q in ['today', 'yesterday', 'tomorrow', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
