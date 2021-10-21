@@ -107,21 +107,15 @@ class Test_Dates(TestCase):
             'saturday': 6,
             'sunday': 7
         }
-        when = maya.now()
+        today = maya.when('today', tz)
         for k, v in dow.items():
+            day = maya.when(k, tz)
+            if day.weekday > today.weekday:
+                day = day.add(weeks=1)
+            daystamp = iso_datestamp(day)
             a, b = comprehend_date(k)
-            if v == when.weekday:
-                then = copy(when)
-            elif v < when.weekday:
-                delta = when.weekday - v
-                then = when.subtract(days=delta)
-            else:
-                delta = v - when.weekday
-                then = when.add(days=delta)
-            for attrname in ['year', 'month', 'day']:
-                x = getattr(then, attrname)
-                y = getattr(a, attrname)
-                assert_equal(x, y)
+            assert_equal(daystamp, iso_datestamp(a))
+            assert_equal(daystamp, iso_datestamp(b))
 
     def test_next_days_of_week(self):
         dow = {
@@ -136,12 +130,13 @@ class Test_Dates(TestCase):
         today = maya.when('today', tz)
         for k, v in dow.items():
             kk = f'next {k}'
+            day = maya.when(k, tz)
+            if day.weekday > today.weekday:
+                day = day.add(weeks=1)
+            day = day.add(weeks=1)
+            daystamp = iso_datestamp(day)
             start_dt, end_dt = comprehend_date(kk)
-            expected_dt = today.add(weeks=1)
-            assert_equal(
-                iso_datestamp(expected_dt),
-                iso_datestamp(start_dt)
-            )
+            assert_equal(daystamp, iso_datestamp(start_dt))
 
     def test_last_days_of_week(self):
         dow = {
@@ -156,12 +151,13 @@ class Test_Dates(TestCase):
         today = maya.when('today', tz)
         for k, v in dow.items():
             kk = f'last {k}'
+            day = maya.when(k, tz)
+            if day.weekday > today.weekday:
+                day = day.add(weeks=1)
+            day = day.subtract(weeks=1)
+            daystamp = iso_datestamp(day)
             start_dt, end_dt = comprehend_date(kk)
-            expected_dt = today.subtract(weeks=1)
-            assert_equal(
-                iso_datestamp(expected_dt),
-                iso_datestamp(start_dt)
-            )
+            assert_equal(daystamp, iso_datestamp(start_dt))
 
     def test_relative_periods(self):
         today = maya.when('today', tz)

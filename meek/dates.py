@@ -6,13 +6,39 @@ Manage dates
 
 from copy import copy
 import logging
+import math
 import maya
+import re
 from tzlocal import get_localzone
 
 days_of_week = ['monday', 'tuesday', 'wednesday',
                 'thursday', 'friday', 'saturday', 'sunday']
 logger = logging.getLogger(__name__)
+rx_descriptive_date = re.compile(
+    r'^(?P<relation>last|next|this)? ?(?P<period>monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month|quarter|year)$')
 tz = str(get_localzone())
+
+
+def quarter(when):
+    if isinstance(when, int):
+        m = when
+    elif isinstance(when, maya.MayaDT):
+        m = when.month
+    else:
+        raise TypeError(
+            f'Unexpected type for argument "when": {type(when)} = {repr(when)}')
+    if m < 1 or m > 12:
+        raise ValueError(
+            f'Month number ({m}) derived from argument "when" out of range. Expected 1-12.'
+        )
+    q = math.ceil(m/3)
+    start_m = (q - 1) * 3 + 1
+    end_m = start_m + 2
+    return {
+        'quarter': q,
+        'start_month': start_m,
+        'end_month': end_m
+    }
 
 
 def comprehend_date(when):
@@ -24,101 +50,47 @@ def comprehend_date(when):
     else:
         raise TypeError(
             f'Unexpected type for argument "when": {type(when)} = {repr(when)}')
-
-    today = maya.when('today', tz)
-    end_date = None
     if when == '':
-        q = 'today'
-    else:
-        q = when
-    if q in ['today', 'yesterday', 'tomorrow']:
-        start_date = maya.when(q, tz)
+        when = 'today'
+    m = rx_descriptive_date.match(when)
+    if m is None:
+        start_date = maya.when(when, tz)
         end_date = copy(start_date)
-    elif q in days_of_week:
-        today = maya.when('today', tz)
-        dow = days_of_week.index(q) + 1
-        if dow > today.weekday:
-            start_date = maya.when(q, tz, prefer_dates_from='future')
-        else:
-            start_date = maya.when(q, tz)
-        end_date = copy(start_date)
-    elif q.startswith('last '):
-        q_ultima = q.split()[-1]
-        if q_ultima in days_of_week:
-            start_date = today.subtract(weeks=1)
-        elif q_ultima == 'week':
-            start_date = maya.when('monday', tz).subtract(weeks=1)
-            end_date = start_date.add(days=4)
-        elif q_ultima == 'month':
-            start_date = today.subtract(months=1).snap('@month')
-            end_date = start_date.add(months=1).subtract(days=1)
-        elif q_ultima == 'quarter':
-            start_date = today.snap(f'@month')
-            if start_date.month in [2, 5, 8, 11]:
-                start_date = start_date.subtract(months=1)
-            elif start_date.month in [3, 6, 9, 12]:
-                start_date = start_date.subtract(months=2)
-            start_date = start_date.subtract(months=3)
-            end_date = start_date.add(months=3).subtract(days=1)
-        elif q_ultima == 'year':
-            start_date = today.subtract(years=1).snap('@year')
-            end_date = today.snap('@year').subtract(days=1)
-    elif q.startswith('this '):
-        q_ultima = q.split()[-1]
-        if q_ultima in ['week', 'month', 'quarter', 'year']:
-
-            if q_ultima == 'week':
-                start_date = maya.when('monday', tz)
-                kwargs = {'days': 5}
-            elif q_ultima == 'quarter':
-                start_date = today.snap(f'@month')
-                if start_date.month in [2, 5, 8, 11]:
-                    start_date = start_date.subtract(months=1)
-                elif start_date.month in [3, 6, 9, 12]:
-                    start_date = start_date.subtract(months=2)
-                kwargs = {'months': 3}
-            else:
-                start_date = today.snap(f'@{q_ultima}')
-                kwargs = {f'{q_ultima}s': 1}
-            end_date = start_date.add(**kwargs).subtract(days=1)
-        else:
-            raise NotImplementedError(q)
-    elif q.startswith('next '):
-        q_ultima = q.split()[-1]
-        today = maya.when('today', tz)
-        if q_ultima in days_of_week:
-            start_date = today.add(weeks=1)
-        elif q_ultima == 'week':
-            start_date = maya.when('monday', tz).add(weeks=1)
-            end_date = start_date.add(days=4)
-        elif q_ultima == 'quarter':
-            start_date = today.snap(f'@month')
-            if start_date.month in [2, 5, 8, 11]:
-                start_date = start_date.subtract(months=1)
-            elif start_date.month in [3, 6, 9, 12]:
-                start_date = start_date.subtract(months=2)
-            start_date = start_date.add(months=3)
-            end_date = start_date.add(months=3).subtract(days=1)
-        elif q_ultima in ['month', 'year']:
-            start_date = today.snap(f'@{q_ultima}')
-            if q_ultima == 'quarter':
-                if start_date.month in [2, 5, 8, 11]:
-                    kwargs = {'months': 2}
-                elif start_date.month in [3, 6, 9, 12]:
-                    kwargs = {'months': 1}
-                    start_date = start_date.subtract(months=2)
-                else:
-                    kwargs = {'months': 3}
-            else:
-                kwargs = {f'{q_ultima}s': 1}
-            start_date = start_date.add(**kwargs)
-            if q_ultima == 'quarter':
-                kwargs = {'months': 3}
-            end_date = start_date.add(**kwargs).subtract(days=1)
-        else:
-            raise NotImplementedError(q)
     else:
-        start_date = maya.when(q)
+        relation = m.group('relation')
+        period = m.group('period')
+        today = maya.when('today', tz)
+        if period == 'quarter':
+            q = quarter(today)
+            start_date = maya.when(f'{today.year}-{q["start_month"]}-1', tz)
+            end_date = maya.when(
+                f'{today.year}-{q["end_month"]}-1', tz).add(months=1).subtract(days=1)
+            delta = {'months': 3}
+        elif period == 'week':
+            # for meek, "week" means "work week", i.e., monday-friday
+            start_date = today.snap('@week').add(days=1)
+            end_date = start_date.add(days=4)
+            delta = {'weeks': 1}
+        elif period in days_of_week:
+            start_date = maya.when(period, tz)
+            if start_date.weekday > today.weekday:
+                start_date = start_date.add(weeks=1)
+            end_date = copy(start_date)
+            delta = {'weeks': 1}
+        else:
+            start_date = today.snap(f'@{period}')
+            kwargs = {f'{period}s': 1}
+            end_date = start_date.add(**kwargs).subtract(days=1)
+            delta = {f'{period}s': 1}
+        if relation is not None:
+            if relation == 'last':
+                start_date = start_date.subtract(**delta)
+                end_date = end_date.subtract(**delta)
+            elif relation == 'this':
+                pass
+            elif relation == 'next':
+                start_date = start_date.add(**delta)
+                end_date = end_date.add(**delta)
     return (start_date, end_date)
 
 
