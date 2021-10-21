@@ -50,6 +50,14 @@ def comprehend_date(when):
         elif q_ultima == 'month':
             start_date = today.subtract(months=1).snap('@month')
             end_date = start_date.add(months=1).subtract(days=1)
+        elif q_ultima == 'quarter':
+            start_date = today.snap(f'@month')
+            if start_date.month in [2, 5, 8, 11]:
+                start_date = start_date.subtract(months=1)
+            elif start_date.month in [3, 6, 9, 12]:
+                start_date = start_date.subtract(months=2)
+            start_date = start_date.subtract(months=3)
+            end_date = start_date.add(months=3).subtract(days=1)
     elif q.startswith('this '):
         q_ultima = q.split()[-1]
         if q_ultima in ['week', 'month', 'quarter', 'year']:

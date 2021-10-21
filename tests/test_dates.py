@@ -177,6 +177,12 @@ class Test_Dates(TestCase):
             next_quarter = 1
             next_quarter_year += 1
         next_quarter_year = str(next_quarter_year)
+        last_quarter = this_quarter - 1
+        last_quarter_year = today.year
+        if last_quarter == 0:
+            last_quarter = 4
+            last_quarter_year -= 1
+        last_quarter_year = str(last_quarter_year)
 
         cases = {
             'this week': (
@@ -214,6 +220,12 @@ class Test_Dates(TestCase):
                     this_quarter_year, next_quarter_year),
                 quarter_dates[next_quarter][1].replace(
                     this_quarter_year, next_quarter_year)
+            ),
+            'last quarter': (
+                quarter_dates[last_quarter][0].replace(
+                    this_quarter_year, last_quarter_year),
+                quarter_dates[last_quarter][1].replace(
+                    this_quarter_year, last_quarter_year)
             ),
             'this year': (
                 iso_datestamp(today.snap('@year')),
