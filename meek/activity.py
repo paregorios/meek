@@ -69,7 +69,7 @@ class Activity:
             'title': self.title,
             'complete': self.complete
         }
-        for attrname in ['due', 'tags', 'interval']:
+        for attrname in ['due', 'tags', 'interval', 'not_before']:
             v = getattr(self, attrname)
             if v is None:
                 continue
