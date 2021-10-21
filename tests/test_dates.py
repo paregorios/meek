@@ -201,6 +201,10 @@ class Test_Dates(TestCase):
                 iso_datestamp(today.add(months=2).snap(
                     '@month').subtract(days=1))
             ),
+            'last month': (
+                iso_datestamp(today.subtract(months=1).snap('@month')),
+                iso_datestamp(today.snap('@month').subtract(days=1))
+            ),
             'this quarter': (
                 quarter_dates[this_quarter][0],
                 quarter_dates[this_quarter][1]
