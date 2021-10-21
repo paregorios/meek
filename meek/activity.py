@@ -17,12 +17,13 @@ tz = str(get_localzone())
 
 
 class Event:
+    """An entry in the Activity history."""
 
     def __init__(self, what: str, when=None):
         if when is None:
-            self.when = maya.now()
+            self.when = maya.when('today', tz)
         else:
-            self.when = maya.when(when)
+            self.when = maya.when(when, tz)
         self.what = what
 
     def asdict(self):
@@ -34,6 +35,7 @@ class Event:
 
 
 class Activity:
+    """Something you want or need to do."""
 
     def __init__(self, mode='live', **kwargs):
         self._id = None
