@@ -236,6 +236,10 @@ class Test_Dates(TestCase):
                 iso_datestamp(today.snap('@year').add(years=1)),
                 iso_datestamp(today.snap(
                     '@year').add(years=2).subtract(days=1))
+            ),
+            'last year': (
+                iso_datestamp(today.snap('@year').subtract(years=1)),
+                iso_datestamp(today.snap('@year').subtract(days=1))
             )
 
         }

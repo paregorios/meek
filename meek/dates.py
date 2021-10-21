@@ -58,6 +58,9 @@ def comprehend_date(when):
                 start_date = start_date.subtract(months=2)
             start_date = start_date.subtract(months=3)
             end_date = start_date.add(months=3).subtract(days=1)
+        elif q_ultima == 'year':
+            start_date = today.subtract(years=1).snap('@year')
+            end_date = today.snap('@year').subtract(days=1)
     elif q.startswith('this '):
         q_ultima = q.split()[-1]
         if q_ultima in ['week', 'month', 'quarter', 'year']:
