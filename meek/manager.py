@@ -39,7 +39,8 @@ class Manager:
         self.current = list()
         self.indexes = {
             'title': {},
-            'words': {}
+            'words': {},
+            'tags': {}
         }
 
     def add_activity(self, activity):
@@ -159,6 +160,9 @@ class Manager:
                 return ''
         d = a.asdict()
         return pformat(d, indent=4, sort_dicts=True)
+
+    def dump_indexes(self):
+        return pformat(self.indexes, indent=4)
 
     def list_activities(self, **kwargs):
         alist = self._get_list(**kwargs)

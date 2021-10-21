@@ -57,7 +57,17 @@ class Interpreter:
             try:
                 verb = self.aliases[verb]
             except KeyError:
-                return f'Unrecognized verb "{verb}"'
+                try:
+                    self.manager.indexes['tags'][verb]
+                except KeyError:
+                    try:
+                        self.manager.indexes['words'][verb]
+                    except KeyError:
+                        return f'Unrecognized verb "{verb}"'
+                    else:
+                        return self.manager.list_activities(words=verb)
+                else:
+                    return self.manager.list_activities(tags=verb)
         args, kwargs = self._objectify(objects)
         msg = getattr(self, f'_verb_{verb}')(args, **kwargs)
         if msg is not None:
@@ -139,6 +149,13 @@ class Interpreter:
         """
         qualifier = ' '.join(args)
         return self.manager.list_due(qualifier)
+
+    def _verb_dump(self, args, **kwargs):
+        if isinstance(args, list):
+            if len(args) == 1:
+                if args[0] == 'indexes':
+                    return self.manager.dump_indexes()
+        raise NotImplementedError(args)
 
     def _verb_error(self, args, **kwargs):
         """
