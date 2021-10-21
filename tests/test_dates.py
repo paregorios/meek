@@ -265,8 +265,5 @@ class Test_Dates(TestCase):
         }
         for q, expected in cases.items():
             start_dt, end_dt = comprehend_date(q)
-            print(q)
-            print('start')
             assert_equal(expected[0], iso_datestamp(start_dt)),
-            print('end')
             assert_equal(expected[1], iso_datestamp(end_dt))
