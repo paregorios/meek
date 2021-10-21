@@ -41,7 +41,6 @@ Aliases: n
 
 ## Next
 
-- Add "not before" functionality
 - Consolidate and improve due-date specification (e.g., "next year")
 - Add 'events today' function (and similar) using tag:event
 - Add 'errands today' function (and similar) using tag:errand
