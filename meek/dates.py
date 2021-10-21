@@ -69,7 +69,15 @@ def comprehend_date(when):
         elif q_ultima == 'week':
             start_date = maya.when('monday', tz).add(weeks=1)
             end_date = start_date.add(days=4)
-        elif q_ultima in ['month', 'quarter', 'year']:
+        elif q_ultima == 'quarter':
+            start_date = today.snap(f'@month')
+            if start_date.month in [2, 5, 8, 11]:
+                start_date = start_date.subtract(months=1)
+            elif start_date.month in [3, 6, 9, 12]:
+                start_date = start_date.subtract(months=2)
+            start_date = start_date.add(months=3)
+            end_date = start_date.add(months=3).subtract(days=1)
+        elif q_ultima in ['month', 'year']:
             start_date = today.snap(f'@{q_ultima}')
             if q_ultima == 'quarter':
                 if start_date.month in [2, 5, 8, 11]:
