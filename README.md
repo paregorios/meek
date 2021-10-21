@@ -42,7 +42,6 @@ Aliases: n
 ## Next
 
 - Add "previous" as a filter word for due listing (what did I mean by this?)
-- Consolidate and improve due-date specification (e.g., "next year")
 - Add 'events today' function (and similar) using tag:event
 - Add 'errands today' function (and similar) using tag:errand
 - Add support for event completion history (last week, last month, etc.)
