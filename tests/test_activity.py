@@ -41,7 +41,12 @@ class Test_Activity(TestCase):
             '2067-10-20': ['2067-10-20', 'October 20, 2067', '10/20/67', '10/20/2067'],
             today.iso8601().split('T')[0]: ['today'],
             today.add(days=1).iso8601().split('T')[0]: ['tomorrow'],
-            today.subtract(days=1).iso8601().split('T')[0]: ['yesterday']
+            today.subtract(days=1).iso8601().split('T')[0]: ['yesterday'],
+            today.snap('@w').add(weeks=1).add(days=5).iso8601().split('T')[0]: ['next week'],
+            maya.when(f'{str(today.year)}-{str(today.month)}-1').add(months=2).subtract(days=1).iso8601().split(
+                'T')[0]: ['next month'],
+            maya.when(f'{str(today.year)}-12-31').add(years=1).iso8601().split(
+                'T')[0]: ['next year']
             # next week, month, quarter, year, etc.
         }
         days_of_week = ['monday', 'tuesday', 'wednesday',
