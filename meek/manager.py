@@ -6,7 +6,7 @@ Manager for meek
 
 from collections import deque
 from copy import copy
-from meek.dates import comprehend_date
+from meek.dates import comprehend_date, iso_datestamp
 import json
 import logging
 import maya
@@ -437,9 +437,15 @@ class Manager:
 
     def _filter_list(self, alist, idxname, argv):
         if isinstance(argv, str):
-            filtervals = [argv, ]
+            if idxname in ['due', 'not_before']:
+                try:
+                    filtervals = [iso_datestamp(comprehend_date(argv)[0]), ]
+                except ValueError:
+                    filtervals = list()
+            else:
+                filtervals = [argv, ]
         elif isinstance(argv, maya.MayaDT):
-            filtervals = [argv.iso8601(), ]
+            filtervals = [iso_datestamp(argv.iso8601), ]
         elif isinstance(argv, list):
             filtervals = argv
         else:
@@ -454,9 +460,10 @@ class Manager:
                     try:
                         v = getattr(a, idxname)
                     except AttributeError:
+                        print('attribute error')
                         continue
                     else:
-                        if v == argv:
+                        if v == fv:
                             blist.append(a)
             else:
                 try:
