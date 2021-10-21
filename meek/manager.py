@@ -249,6 +249,7 @@ class Manager:
         for a in alist:
             for k, arg in kwargs.items():
                 setattr(a, k, arg)
+            self._index_activity(a)
         out_list = self._format_list(alist)
         self.current = alist
         msg = f'Modified {len(alist)} activities:\n'
