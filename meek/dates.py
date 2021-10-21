@@ -41,6 +41,9 @@ def comprehend_date(when):
         else:
             start_date = maya.when(q, tz)
         end_date = copy(start_date)
+    elif q == 'last week':
+        start_date = maya.when('monday', tz).subtract(weeks=1)
+        end_date = start_date.add(days=4)
     elif q.startswith('this '):
         q_ultima = q.split()[-1]
         if q_ultima in ['week', 'month', 'quarter', 'year']:

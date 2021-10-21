@@ -187,6 +187,10 @@ class Test_Dates(TestCase):
                 iso_datestamp(monday.add(weeks=1)),
                 iso_datestamp(friday.add(weeks=1))
             ),
+            'last week': (
+                iso_datestamp(monday.subtract(weeks=1)),
+                iso_datestamp(friday.subtract(weeks=1))
+            ),
             'this month': (
                 iso_datestamp(today.snap('@month')),
                 iso_datestamp(today.add(months=1).snap(
@@ -206,6 +210,16 @@ class Test_Dates(TestCase):
                     this_quarter_year, next_quarter_year),
                 quarter_dates[next_quarter][1].replace(
                     this_quarter_year, next_quarter_year)
+            ),
+            'this year': (
+                iso_datestamp(today.snap('@year')),
+                iso_datestamp(today.snap(
+                    '@year').add(years=1).subtract(days=1))
+            ),
+            'next year': (
+                iso_datestamp(today.snap('@year').add(years=1)),
+                iso_datestamp(today.snap(
+                    '@year').add(years=2).subtract(days=1))
             )
 
         }
