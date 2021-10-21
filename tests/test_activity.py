@@ -33,10 +33,11 @@ class Test_Activity(TestCase):
         pass
 
     def test_not_before(self):
-        s = '2067-10-20T08:00'
+        s = 'October 20, 2067'
+        t = '2067-10-20'
         kwargs = {
             'title': 'test activity',
             'not_before': s
         }
         a = Activity(**kwargs)
-        assert_equal(s.split('T')[0], a.not_before)
+        assert_equal(t, a.not_before)
