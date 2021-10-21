@@ -30,8 +30,6 @@ def comprehend_date(when):
         q = 'today'
     else:
         q = when
-    days_of_week = ['monday', 'tuesday', 'wednesday',
-                    'thursday', 'friday', 'saturday', 'sunday']
     if q in ['today', 'yesterday', 'tomorrow']:
         start_date = maya.when(q, tz)
         end_date = copy(start_date)
@@ -47,7 +45,10 @@ def comprehend_date(when):
         q_ultima = q.split()[-1]
         if q_ultima in ['week', 'month', 'quarter', 'year']:
             today = maya.when('today', tz)
-            if q_ultima == 'quarter':
+            if q_ultima == 'week':
+                start_date = maya.when('monday', tz)
+                kwargs = {'days': 5}
+            elif q_ultima == 'quarter':
                 start_date = today.snap(f'@month')
                 if start_date.month in [2, 5, 8, 11]:
                     start_date = start_date.subtract(months=1)
@@ -62,11 +63,13 @@ def comprehend_date(when):
             raise NotImplementedError(q)
     elif q.startswith('next '):
         q_ultima = q.split()[-1]
-        if q_ultima in ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']:
-            start_date = maya.when(
-                q_ultima, tz, prefer_dates_from='future')
-        elif q_ultima in ['week', 'month', 'quarter', 'year']:
-            today = maya.when('today', tz)
+        today = maya.when('today', tz)
+        if q_ultima in days_of_week:
+            start_date = today.add(weeks=1)
+        elif q_ultima == 'week':
+            start_date = maya.when('monday', tz).add(weeks=1)
+            end_date = start_date.add(days=4)
+        elif q_ultima in ['month', 'quarter', 'year']:
             start_date = today.snap(f'@{q_ultima}')
             if q_ultima == 'quarter':
                 if start_date.month in [2, 5, 8, 11]:

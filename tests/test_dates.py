@@ -5,9 +5,10 @@
 from copy import copy
 import logging
 import maya
-from meek.dates import comprehend_date
+from meek.dates import comprehend_date, iso_datestamp, tz
 from nose.tools import assert_equal, assert_false, assert_true, raises
 from pathlib import Path
+from pprint import pprint
 from unittest import TestCase
 
 logger = logging.getLogger(__name__)
@@ -77,11 +78,8 @@ class Test_Dates(TestCase):
             'sunday': 7
         }
         when = maya.now()
-        print(f'when: {when}')
         for k, v in dow.items():
-            print(f'k:v = {k}:{v}')
             a, b = comprehend_date(k)
-            print(f'a: {a}')
             if v == when.weekday:
                 then = copy(when)
             elif v < when.weekday:
@@ -97,3 +95,72 @@ class Test_Dates(TestCase):
                 print(f'a.{attrname}: {y}')
                 assert_equal(x, y)
                 # assert_equal(getattr(a, k), getattr(b, k))
+
+    def test_days_of_week(self):
+        dow = {
+            'monday': 1,
+            'tuesday': 2,
+            'wednesday': 3,
+            'thursday': 4,
+            'friday': 5,
+            'saturday': 6,
+            'sunday': 7
+        }
+        when = maya.now()
+        for k, v in dow.items():
+            a, b = comprehend_date(k)
+            if v == when.weekday:
+                then = copy(when)
+            elif v < when.weekday:
+                delta = when.weekday - v
+                then = when.subtract(days=delta)
+            else:
+                delta = v - when.weekday
+                then = when.add(days=delta)
+            for attrname in ['year', 'month', 'day']:
+                x = getattr(then, attrname)
+                y = getattr(a, attrname)
+                assert_equal(x, y)
+
+    def test_next_days_of_week(self):
+        dow = {
+            'monday': 1,
+            'tuesday': 2,
+            'wednesday': 3,
+            'thursday': 4,
+            'friday': 5,
+            'saturday': 6,
+            'sunday': 7
+        }
+        today = maya.when('today', tz)
+        for k, v in dow.items():
+            kk = f'next {k}'
+            start_dt, end_dt = comprehend_date(kk)
+            expected_dt = today.add(weeks=1)
+            assert_equal(
+                iso_datestamp(expected_dt),
+                iso_datestamp(start_dt)
+            )
+
+    def test_relative_periods(self):
+        today = maya.when('today', tz)
+        monday = maya.when('monday', tz)
+        friday = monday.add(days=4)
+        cases = {
+            'this week': (
+                iso_datestamp(monday),
+                iso_datestamp(friday)
+            ),
+            'next week': (
+                iso_datestamp(monday.add(weeks=1)),
+                iso_datestamp(friday.add(weeks=1))
+            )
+        }
+        pprint(cases, indent=4)
+        for q, expected in cases.items():
+            start_dt, end_dt = comprehend_date(q)
+            print(q)
+            print('start')
+            assert_equal(expected[0], iso_datestamp(start_dt)),
+            print('end')
+            assert_equal(expected[1], iso_datestamp(end_dt))
