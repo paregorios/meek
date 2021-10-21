@@ -8,6 +8,7 @@ from inspect import getdoc
 import logging
 from meek.manager import Manager, UsageError
 from pathlib import Path
+from pprint import pprint
 import readline
 
 WHERE_DEFAULT = '~/.meek'
@@ -231,6 +232,9 @@ class Interpreter:
             > list tags:daily
             > list tags:daily due:today
             > list overdue
+        Note: returns only incomplete activities by default. Try instead:
+            > list complete:true
+            > list complete:any
         """
         if args:
             try:
@@ -239,6 +243,10 @@ class Interpreter:
                 kwargs['words'] = args
             else:
                 kwargs['words'] = list(set(args).update(kwargs['words']))
+        try:
+            kwargs['complete']
+        except KeyError:
+            kwargs['complete'] = False
         return self.manager.list_activities(**kwargs)
 
     def _verb_load(self, args, **kwargs):

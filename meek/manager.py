@@ -446,11 +446,23 @@ class Manager:
             raise TypeError(f'argv: {type(argv)}={repr(argv)}')
         result = set(alist)
         for fv in [v.lower() for v in filtervals]:
-            idx = self.indexes[idxname]
             try:
-                blist = idx[fv]
+                idx = self.indexes[idxname]
             except KeyError:
                 blist = list()
+                for a in alist:
+                    try:
+                        v = getattr(a, idxname)
+                    except AttributeError:
+                        continue
+                    else:
+                        if v == argv:
+                            blist.append(a)
+            else:
+                try:
+                    blist = idx[fv]
+                except KeyError:
+                    blist = list()
             result = result.intersection(blist)
         return list(result)
 
@@ -496,9 +508,26 @@ class Manager:
         if not kwargs:
             return alist
         for k, argv in kwargs.items():
-            if k == 'sort':
+            if k in ['sort', 'complete']:
                 continue
             alist = self._filter_list(alist, k, argv)
+        try:
+            c = kwargs['complete']
+        except KeyError:
+            c = None
+        else:
+            if isinstance(c, bool):
+                pass
+            elif isinstance(c, str):
+                if c.lower() == 'true':
+                    c = True
+                elif c.lower() == 'false':
+                    c = False
+                else:
+                    # includes values like "all"
+                    c = None
+        if c is not None:
+            alist = [a for a in alist if a.complete == c]
         return alist
 
     def _index_activity(self, activity):
