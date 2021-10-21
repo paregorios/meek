@@ -5,7 +5,7 @@ Python 3 package template (changeme)
 """
 
 from collections import deque
-from meek.dates import comprehend_date, iso_datestamp
+from meek.dates import comprehend_date, dow_future_proof, iso_datestamp
 from meek.norm import norm
 import logging
 import maya
@@ -119,32 +119,13 @@ class Activity:
 
     @ due.setter
     def due(self, value):
-        if isinstance(value, str):
-            v = value
-            epoch = 'current_period'
-            if value == 'this week':
-                epoch = 'future'
-                v = 'friday'
-            # TBD: this month, this quarter, this year
-            # don't we do this somewhere else already?!?
-            elif value.startswith('next '):
-                epoch = 'future'
-            elif value.startswith('last '):
-                epoch = 'past'
-            dt = maya.when(v, tz, prefer_dates_from=epoch)
-        elif isinstance(value, maya.MayaDT):
-            dt = value
+        start_dt, end_dt = comprehend_date(value)
+        if end_dt is not None:
+            dt = end_dt
         else:
-            raise TypeError(
-                f'value: {type(value)} = {repr(value)}, expected {str} or {maya.MayaDT}')
-        dt_s = dt.iso8601().split('T')[0]
-        today = maya.when('today', tz)
-        today = today.snap_tz('@d+6h', tz)
-        today_s = today.iso8601().split('T')[0]
-        if dt_s < today_s:
-            logger.warning(
-                f'Supplied due date ({dt_s}) is earlier than today ({today_s}): "{self.title}"')
-        self._due = dt_s
+            dt = start_dt
+        dt = dow_future_proof(value, dt)
+        self._due = iso_datestamp(dt)
         if self.mode == 'live':
             self._append_event(f'due={self.due}')
 

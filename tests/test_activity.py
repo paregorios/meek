@@ -3,9 +3,12 @@
 """Test the meek activity module."""
 
 import logging
+import maya
+from tzlocal import get_localzone
 from meek.activity import Activity
 from nose.tools import assert_equal, assert_false, assert_true, raises
 from pathlib import Path
+from pprint import pprint
 from unittest import TestCase
 
 logger = logging.getLogger(__name__)
@@ -31,6 +34,38 @@ class Test_Activity(TestCase):
     def tearDown(self):
         """Change me"""
         pass
+
+    def test_due(self):
+        today = maya.when('today', str(get_localzone()))
+        cases = {
+            '2067-10-20': ['2067-10-20', 'October 20, 2067', '10/20/67', '10/20/2067'],
+            today.iso8601().split('T')[0]: ['today'],
+            today.add(days=1).iso8601().split('T')[0]: ['tomorrow'],
+            today.subtract(days=1).iso8601().split('T')[0]: ['yesterday']
+            # next week, month, quarter, year, etc.
+        }
+        days_of_week = ['monday', 'tuesday', 'wednesday',
+                        'thursday', 'friday', 'saturday', 'sunday']
+        for i, dow in enumerate(days_of_week):
+            dow_num = i + 1  # why, maya, why?
+            if dow_num > today.weekday:
+                delta = dow_num - today.weekday
+            else:
+                delta = 7 - (today.weekday - dow_num)
+            k = today.add(days=delta).iso8601().split('T')[0]
+            v = dow
+            try:
+                cases[k]
+            except KeyError:
+                cases[k] = list()
+            finally:
+                cases[k].append(v)
+        pprint(cases, indent=4)
+        for k, vals in cases.items():
+            for val in vals:
+                kwargs = {'due': val}
+                a = Activity(**kwargs)
+                assert_equal(k, a.due)
 
     def test_not_before(self):
         s = 'October 20, 2067'

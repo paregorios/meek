@@ -9,18 +9,14 @@ import logging
 import maya
 from tzlocal import get_localzone
 
-
+days_of_week = ['monday', 'tuesday', 'wednesday',
+                'thursday', 'friday', 'saturday', 'sunday']
 logger = logging.getLogger(__name__)
-
-
-def iso_datestamp(dt: maya.MayaDT):
-    if isinstance(dt, maya.MayaDT):
-        return dt.iso8601().split('T')[0]
-    else:
-        raise TypeError(f'Unexpected value for dt: {type(dt)}={repr(dt)}')
+tz = str(get_localzone())
 
 
 def comprehend_date(when):
+    """Figure out a datetime for whatever is in the 'when' argument. """
     if isinstance(when, maya.MayaDT):
         return (when, None)
     elif isinstance(when, str):
@@ -30,7 +26,6 @@ def comprehend_date(when):
             f'Unexpected type for argument "when": {type(when)} = {repr(when)}')
 
     end_date = None
-    tz = str(get_localzone())
     if when == '':
         q = 'today'
     else:
@@ -43,13 +38,9 @@ def comprehend_date(when):
     elif q in days_of_week:
         today = maya.when('today', tz)
         dow = days_of_week.index(q) + 1
-        print(f'today.weekday: {today.weekday}')
-        print(f'dow: {dow}')
         if dow > today.weekday:
-            print('foo')
             start_date = maya.when(q, tz, prefer_dates_from='future')
         else:
-            print('bar')
             start_date = maya.when(q, tz)
         end_date = copy(start_date)
     elif q.startswith('this '):
@@ -96,3 +87,21 @@ def comprehend_date(when):
     else:
         start_date = maya.when(q)
     return (start_date, end_date)
+
+
+def dow_future_proof(when, dt: maya.MayaDT):
+    """ If 'when' is a day of the week, make sure dt is in the future, not past. """
+    if isinstance(when, str):
+        if when in days_of_week:
+            today = maya.when('today', tz)
+            if today.weekday >= dt.weekday:
+                dt = dt.add(days=7)
+    return dt
+
+
+def iso_datestamp(dt: maya.MayaDT):
+    """Return just the date part of the ISO 8601 string for the MayaDT """
+    if isinstance(dt, maya.MayaDT):
+        return dt.iso8601().split('T')[0]
+    else:
+        raise TypeError(f'Unexpected value for dt: {type(dt)}={repr(dt)}')
