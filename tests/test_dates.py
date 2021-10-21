@@ -143,6 +143,26 @@ class Test_Dates(TestCase):
                 iso_datestamp(start_dt)
             )
 
+    def test_last_days_of_week(self):
+        dow = {
+            'monday': 1,
+            'tuesday': 2,
+            'wednesday': 3,
+            'thursday': 4,
+            'friday': 5,
+            'saturday': 6,
+            'sunday': 7
+        }
+        today = maya.when('today', tz)
+        for k, v in dow.items():
+            kk = f'last {k}'
+            start_dt, end_dt = comprehend_date(kk)
+            expected_dt = today.subtract(weeks=1)
+            assert_equal(
+                iso_datestamp(expected_dt),
+                iso_datestamp(start_dt)
+            )
+
     def test_relative_periods(self):
         today = maya.when('today', tz)
         monday = maya.when('monday', tz)
@@ -243,7 +263,6 @@ class Test_Dates(TestCase):
             )
 
         }
-        pprint(cases, indent=4)
         for q, expected in cases.items():
             start_dt, end_dt = comprehend_date(q)
             print(q)
