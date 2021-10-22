@@ -40,7 +40,9 @@ class Manager:
         self.indexes = {
             'title': {},
             'words': {},
-            'tags': {}
+            'tags': {},
+            'due': {},
+            'complete': {}
         }
 
     def add_activity(self, activity):
@@ -547,14 +549,16 @@ class Manager:
                 if v is None:
                     continue
                 elif isinstance(v, str):
+                    vals = [v.lower(), ]
+                elif isinstance(v, (list, set)):
+                    vals = [val.lower() for val in v]
+                elif isinstance(v, bool):
                     vals = [v, ]
                 elif isinstance(v, maya.MayaDT):
                     vals = [v.iso8601(), ]
-                elif isinstance(v, (list, set)):
-                    vals = v
                 else:
                     raise TypeError(f'v: {type(v)}={repr(v)}')
-                for v in [val.lower() for val in vals]:
+                for v in vals:
                     try:
                         idx[v]
                     except KeyError:
