@@ -216,7 +216,7 @@ class Activity:
 
     @ property
     def words(self):
-        attrs = [a for a in dir(self) if a != '_id' and a.startswith(
+        attrs = [a for a in dir(self) if a not in ['_id', '_due', '_not_before'] and a.startswith(
             '_') and not a.startswith('__')]
         attrvals = set()
         for a in attrs:
