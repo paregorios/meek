@@ -182,54 +182,6 @@ class Manager:
         self.current = alist
         return '\n'.join(out_list)
 
-    def list_due(self, qualifier, include_overdue=False):
-        tz = str(get_localzone())
-        q = qualifier.lower()
-        # start_date, end_date = comprehend_date(q)
-        if q == '':
-            q = 'today'
-        if q in ['today', 'yesterday', 'tomorrow', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
-            start_date = maya.when(q, tz)
-            end_date = copy(start_date)
-        elif q.startswith('this '):
-            q_ultima = q.split()[-1]
-            if q_ultima in ['week', 'month', 'year']:
-                today = maya.when('today', tz)
-                start_date = today.snap(f'@{q_ultima}')
-                kwargs = {f'{q_ultima}s': 1}
-                end_date = start_date.add(**kwargs).subtract(days=1)
-            else:
-                raise NotImplementedError(qualifier)
-        elif q.startswith('next '):
-            q_ultima = q.split()[-1]
-            logger.debug(f'q_ultima: {q_ultima}')
-            if q_ultima in ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']:
-                start_date = maya.when(
-                    q_ultima, tz, prefer_dates_from='future')
-                end_date = copy(start_date)
-            elif q_ultima in ['week', 'month', 'year']:
-                today = maya.when('today', tz)
-                start_date = today.snap(f'@{q_ultima}')
-                kwargs = {f'{q_ultima}s': 1}
-                start_date = start_date.add(**kwargs)
-                end_date = start_date.add(**kwargs).subtract(days=1)
-            else:
-                raise NotImplementedError(qualifier)
-        else:
-            raise NotImplementedError(qualifier)
-        start_date = start_date.iso8601().split('T')[0]
-        end_date = end_date.iso8601().split('T')[0]
-        alist = [a for a in list(self.activities.values())
-                 if a.due is not None and not a.complete]
-        if include_overdue:
-            alist = [a for a in alist if a.due <= end_date]
-        else:
-            alist = [a for a in alist if a.due >=
-                     start_date and a.due <= end_date]
-        out_list = self._format_list(alist)
-        self.current = alist
-        return '\n'.join(out_list)
-
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'
         i = 0
@@ -525,22 +477,15 @@ class Manager:
         idx = self.indexes['not_before']
         start_dt, end_dt = comprehend_date(val)
         start = iso_datestamp(start_dt)
-        print(f'start: {start}')
-        #matches = [a for k, a in idx.items() if k <= start]
         matches = []
         for k, a in idx.items():
-            print(f'{k}: {repr(a)}')
             if k <= start:
                 matches.append(a)
-        pprint(matches, indent=4)
         blist = [item for sublist in matches for item in sublist]
-        pprint(blist, indent=4)
         blist.extend([a for a in self.activities.values()
                      if a.not_before is None])
-        pprint(blist, indent=4)
         result = set(alist)
         result = result.intersection(blist)
-        pprint(result)
         return list(result)
 
     def _filter_list_title(self, alist, filtervals):
@@ -656,9 +601,6 @@ class Manager:
                     vals = [v.iso8601(), ]
                 else:
                     raise TypeError(f'v: {type(v)}={repr(v)}')
-                if idxk == 'not_before':
-                    print(f'index[not_before] vals: {repr(vals)}.')
-
                 for v in vals:
                     try:
                         idx[v]
