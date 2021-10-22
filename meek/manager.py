@@ -42,7 +42,8 @@ class Manager:
             'words': {},
             'tags': {},
             'due': {},
-            'complete': {}
+            'complete': {},
+            'not_before': {}
         }
 
     def add_activity(self, activity):
@@ -438,8 +439,10 @@ class Manager:
         return (i, j, other)
 
     def _filter_list(self, alist, idxname, argv):
-        if idxname in ['due', 'not_before']:
-            raise NotImplementedError(idxname)
+        if idxname == 'not_before':
+            return self._filter_list_not_before(alist, argv)
+        elif idxname in ['due', 'overdue']:
+            return self._filter_list_by_date(alist, idxname, argv)
         try:
             idx = self.indexes[idxname]
         except KeyError:
@@ -459,26 +462,81 @@ class Manager:
             except KeyError:
                 blist = list()
             result = result.intersection(blist)
-        # for fv in filtervals:
-        #     try:
-        #         idx = self.indexes[idxname]
-        #     except KeyError:
-        #         blist = list()
-        #         for a in alist:
-        #             try:
-        #                 v = getattr(a, idxname)
-        #             except AttributeError:
-        #                 print('attribute error')
-        #                 continue
-        #             else:
-        #                 if v == fv:
-        #                     blist.append(a)
-        #     else:
-        #         try:
-        #             blist = idx[fv]
-        #         except KeyError:
-        #             blist = list()
-        #     result = result.intersection(blist)
+        return list(result)
+
+    def _filter_list_by_date(self, alist, idxname, argv):
+        try:
+            idx = self.indexes[idxname]
+        except KeyError:
+            if idxname == 'overdue':
+                idx = self.indexes['due']
+            else:
+                raise NotImplementedError(idxname)
+        if isinstance(argv, str):
+            val = argv
+        elif isinstance(argv, list):
+            if len(argv) > 1:
+                raise ValueError(
+                    f'Only 1 value is supported for filtering by {idxname}. Got {len(argv)} = {repr(argv)}.')
+            else:
+                val = argv[0]
+        if val == '':
+            val = 'today'
+        start_dt, end_dt = comprehend_date(val)
+        start = iso_datestamp(start_dt)
+        try:
+            end = iso_datestamp(end_dt)
+        except TypeError:
+            end = start
+        if idxname == 'due' and end == start:
+            try:
+                blist = idx[start]
+            except KeyError:
+                blist = list()
+        elif idxname == 'due':
+            matches = [a for k, a in idx.items() if k >= start and k <= end]
+            blist = [item for sublist in matches for item in sublist]
+        elif idxname == 'overdue':
+            matches = [a for k, a in idx.items() if k <= end]
+            blist = [item for sublist in matches for item in sublist]
+        result = set(alist)
+        try:
+            result = result.intersection(blist)
+        except TypeError:
+            pprint(blist, indent=4)
+            raise
+        return list(result)
+
+    def _filter_list_not_before(self, alist, argv):
+        if isinstance(argv, str):
+            val = argv
+        elif isinstance(argv, list):
+            if len(argv) > 1:
+                raise ValueError(
+                    f'Only 1 value is supported for filtering by not_before. Got {len(argv)} = {repr(argv)}.')
+            else:
+                val = argv[0]
+        if val == '':
+            val = 'today'
+        idx = self.indexes['not_before']
+        start_dt, end_dt = comprehend_date(val)
+        start = iso_datestamp(start_dt)
+        print(f'start: {start}')
+        #matches = [a for k, a in idx.items() if k <= start]
+        matches = []
+        for k, a in idx.items():
+            print(f'{k}: {repr(a)}')
+            if k <= start:
+                matches.append(a)
+        pprint(matches, indent=4)
+        blist = [item for sublist in matches for item in sublist]
+        pprint(blist, indent=4)
+        blist.extend([a for a in self.activities.values()
+                     if a.not_before is None])
+        pprint(blist, indent=4)
+        result = set(alist)
+        result = result.intersection(blist)
+        pprint(result)
         return list(result)
 
     def _filter_list_title(self, alist, filtervals):
@@ -521,7 +579,7 @@ class Manager:
     def _get_list(self, **kwargs):
         alist = list(self.activities.values())
         if not kwargs:
-            return alist
+            return self._filter_list_not_before(alist, 'today')
         try:
             c = kwargs['complete']
         except KeyError:
@@ -544,6 +602,13 @@ class Manager:
                 raise TypeError(
                     f'Unexpected type for "complete": {type(c)} = "{repr(c)}".'
                 )
+        try:
+            nb = kwargs['not_before']
+        except KeyError:
+            alist = self._filter_list_not_before(alist, 'today')
+        else:
+            if nb in ['any', 'all']:
+                kwargs.pop('not_before')
         for k, argv in kwargs.items():
             if k == 'sort':
                 continue
@@ -569,6 +634,8 @@ class Manager:
                     vals = [v.iso8601(), ]
                 else:
                     raise TypeError(f'v: {type(v)}={repr(v)}')
+                if idxk == 'not_before':
+                    print(f'index[not_before] vals: {repr(vals)}.')
                 for v in vals:
                     try:
                         idx[v]

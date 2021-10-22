@@ -68,17 +68,17 @@ def comprehend_date(when):
             delta = {'months': 3}
         elif period == 'week':
             # for meek, "week" means "work week", i.e., monday-friday
-            start_date = today.snap('@week').add(days=1)
+            start_date = today.snap_tz('@week', tz).add(days=1)
             end_date = start_date.add(days=4)
             delta = {'weeks': 1}
         elif period in days_of_week:
             start_date = maya.when(period, tz)
-            if start_date.weekday > today.weekday:
+            if iso_datestamp(start_date) <= iso_datestamp(today):
                 start_date = start_date.add(weeks=1)
             end_date = copy(start_date)
             delta = {'weeks': 1}
         else:
-            start_date = today.snap(f'@{period}')
+            start_date = today.snap_tz(f'@{period}', tz)
             kwargs = {f'{period}s': 1}
             end_date = start_date.add(**kwargs).subtract(days=1)
             delta = {f'{period}s': 1}
