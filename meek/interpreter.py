@@ -148,8 +148,8 @@ class Interpreter:
             > due this week
             > due next month
         """
-        qualifier = ' '.join(args)
-        return self.manager.list_due(qualifier)
+        kwargs['due'] = ' '.join(args)
+        return self._verb_list([], **kwargs)
 
     def _verb_dump(self, args, **kwargs):
         if isinstance(args, list):
@@ -236,17 +236,38 @@ class Interpreter:
             > list complete:true
             > list complete:any
         """
-        if args:
-            try:
-                kwargs['words']
-            except KeyError:
-                kwargs['words'] = args
-            else:
-                kwargs['words'] = list(set(args).update(kwargs['words']))
         try:
             kwargs['complete']
         except KeyError:
             kwargs['complete'] = False
+        if args:
+            if 'overdue' in args:
+                kwargs['overdue'] = 'today'
+                args.remove('overdue')
+            elif 'due' in args:
+                kwargs['due'] = 'today'
+                args.remove('due')
+            elif 'complete' in args:
+                kwargs['complete'] = True
+                args.remove('complete')
+            elif 'done' in args:
+                kwargs['complete'] = True
+                args.remove('done')
+            elif 'completed' in args:
+                kwargs['complete'] = True
+                args.remove('completed')
+            elif 'finished' in args:
+                kwargs['complete'] = True
+                args.remove('finished')
+            elif 'incomplete' in args:
+                kwargs['complete'] = False
+            if len(args) > 0:
+                try:
+                    kwargs['words']
+                except KeyError:
+                    kwargs['words'] = args
+                else:
+                    kwargs['words'] = list(set(args).update(kwargs['words']))
         return self.manager.list_activities(**kwargs)
 
     def _verb_load(self, args, **kwargs):
@@ -313,8 +334,8 @@ class Interpreter:
             > overdue this week
             > overdue next month
         """
-        qualifier = ' '.join(args)
-        return self.manager.list_due(qualifier, include_overdue=True)
+        kwargs['overdue'] = ' '.join(args)
+        return self._verb_list([], **kwargs)
 
     def _verb_purge(self, args, **kwargs):
         """
