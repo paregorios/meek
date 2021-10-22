@@ -44,7 +44,7 @@ Aliases: n
 - Add "previous" as a filter word for due listing (what did I mean by this?)
 - Add 'events today' function (and similar) using tag:event
 - Add 'errands today' function (and similar) using tag:errand
-- Add support for event completion history (last week, last month, etc.)
+- Add support for activity completion history (last week, last month, etc.)
 - Export to markdown
 - add start/end times to activities tagged "event"? and add functions around that?
 - add "not" filter for listings, e.g., "due this week not today" or "due this week not:today" or "due this week not(due:today") -- I like the last of these syntaxes
