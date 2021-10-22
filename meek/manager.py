@@ -45,6 +45,7 @@ class Manager:
             'complete': {},
             'not_before': {}
         }
+        self.reverse_index = {}
 
     def add_activity(self, activity):
         """ Add an activity to the manager. """
@@ -165,7 +166,10 @@ class Manager:
         return pformat(d, indent=4, sort_dicts=True)
 
     def dump_indexes(self):
-        return pformat(self.indexes, indent=4)
+        msg = []
+        msg.append(pformat(self.indexes, indent=4))
+        msg.append(pformat(self.reverse_index, indent=4))
+        return '\n'.join(msg)
 
     def list_activities(self, **kwargs):
         alist = self._get_list(**kwargs)
@@ -616,7 +620,25 @@ class Manager:
         return alist
 
     def _index_activity(self, activity):
+        try:
+            self.reverse_index[activity.id]
+        except KeyError:
+            self.reverse_index[activity.id] = {}
+        finally:
+            ridx = self.reverse_index[activity.id]
         for idxk, idx in self.indexes.items():
+            try:
+                ridx[idxk]
+            except KeyError:
+                ridx[idxk] = list()
+            else:
+                for val in ridx[idxk]:
+                    idx[val].remove(activity)
+                    if len(idx[val]) == 0:
+                        idx.pop(val)
+                ridx[idxk] = list()
+            finally:
+                ridx_sub = ridx[idxk]
             try:
                 v = getattr(activity, idxk)
             except AttributeError:
@@ -636,6 +658,7 @@ class Manager:
                     raise TypeError(f'v: {type(v)}={repr(v)}')
                 if idxk == 'not_before':
                     print(f'index[not_before] vals: {repr(vals)}.')
+
                 for v in vals:
                     try:
                         idx[v]
@@ -643,3 +666,4 @@ class Manager:
                         idx[v] = list()
                     finally:
                         idx[v].append(activity)
+                        ridx_sub.append(v)
