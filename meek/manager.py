@@ -88,6 +88,7 @@ class Manager:
             alist = context[i:j]
         for a in alist:
             a.complete = True
+        self._index_activity(a)
         if len(alist) == 1:
             msg = f'Marked 1 activity as completed.'
         else:

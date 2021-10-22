@@ -236,6 +236,8 @@ class Activity:
         """Reset due date if an interval is set."""
         if self.interval is None:
             return
+        if not self.complete:
+            return
         if self.interval == 'quarter':
             kwargs = {'months': 3}
         else:
