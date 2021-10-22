@@ -438,41 +438,47 @@ class Manager:
         return (i, j, other)
 
     def _filter_list(self, alist, idxname, argv):
+        if idxname in ['due', 'not_before']:
+            raise NotImplementedError(idxname)
+        try:
+            idx = self.indexes[idxname]
+        except KeyError:
+            raise NotImplementedError(idxname)
         if isinstance(argv, str):
-            if idxname in ['due', 'not_before']:
-                try:
-                    filtervals = [iso_datestamp(comprehend_date(argv)[0]), ]
-                except ValueError:
-                    filtervals = list()
-            else:
-                filtervals = [argv, ]
-        elif isinstance(argv, maya.MayaDT):
-            filtervals = [iso_datestamp(argv.iso8601), ]
+            filtervals = [argv.lower(), ]
         elif isinstance(argv, list):
-            filtervals = argv
+            filtervals = [val.lower() for val in argv]
+        elif isinstance(argv, bool):
+            filtervals = [argv, ]
         else:
             raise TypeError(f'argv: {type(argv)}={repr(argv)}')
         result = set(alist)
-        for fv in [v.lower() for v in filtervals]:
+        for fv in filtervals:
             try:
-                idx = self.indexes[idxname]
+                blist = idx[fv]
             except KeyError:
                 blist = list()
-                for a in alist:
-                    try:
-                        v = getattr(a, idxname)
-                    except AttributeError:
-                        print('attribute error')
-                        continue
-                    else:
-                        if v == fv:
-                            blist.append(a)
-            else:
-                try:
-                    blist = idx[fv]
-                except KeyError:
-                    blist = list()
             result = result.intersection(blist)
+        # for fv in filtervals:
+        #     try:
+        #         idx = self.indexes[idxname]
+        #     except KeyError:
+        #         blist = list()
+        #         for a in alist:
+        #             try:
+        #                 v = getattr(a, idxname)
+        #             except AttributeError:
+        #                 print('attribute error')
+        #                 continue
+        #             else:
+        #                 if v == fv:
+        #                     blist.append(a)
+        #     else:
+        #         try:
+        #             blist = idx[fv]
+        #         except KeyError:
+        #             blist = list()
+        #     result = result.intersection(blist)
         return list(result)
 
     def _filter_list_title(self, alist, filtervals):
@@ -516,27 +522,32 @@ class Manager:
         alist = list(self.activities.values())
         if not kwargs:
             return alist
-        for k, argv in kwargs.items():
-            if k in ['sort', 'complete']:
-                continue
-            alist = self._filter_list(alist, k, argv)
         try:
             c = kwargs['complete']
         except KeyError:
-            c = None
+            kwargs['complete'] = False
         else:
             if isinstance(c, bool):
                 pass
             elif isinstance(c, str):
-                if c.lower() == 'true':
-                    c = True
-                elif c.lower() == 'false':
-                    c = False
+                c = c.lower()
+                if c in ['false', 'f']:
+                    kwargs['complete'] = False
+                elif c in ['true', 't']:
+                    kwargs['complete'] = True
+                elif c in ['any', 'all']:
+                    kwargs.pop('complete')
                 else:
-                    # includes values like "all"
-                    c = None
-        if c is not None:
-            alist = [a for a in alist if a.complete == c]
+                    raise ValueError(
+                        f'Unexpected value for "complete": "{repr(c)}".')
+            else:
+                raise TypeError(
+                    f'Unexpected type for "complete": {type(c)} = "{repr(c)}".'
+                )
+        for k, argv in kwargs.items():
+            if k == 'sort':
+                continue
+            alist = self._filter_list(alist, k, argv)
         return alist
 
     def _index_activity(self, activity):
