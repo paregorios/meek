@@ -81,3 +81,14 @@ class Test_Activity(TestCase):
         }
         a = Activity(**kwargs)
         assert_equal(t, a.not_before)
+
+
+class Test_ActivityProject(TestCase):
+
+    def test_true(self):
+        a = Activity(project=True)
+        assert_true(a.project)
+
+    def test_false(self):
+        a = Activity(project=False)
+        assert_false(a.project)
