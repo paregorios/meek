@@ -73,7 +73,7 @@ class Activity:
             'title': self.title,
             'complete': self.complete
         }
-        for attrname in ['due', 'tags', 'interval', 'not_before']:
+        for attrname in ['due', 'tags', 'interval', 'not_before', 'project']:
             v = getattr(self, attrname)
             if v is None:
                 continue
@@ -208,12 +208,11 @@ class Activity:
         else:
             raise TypeError(
                 f'Expected value of type {bool} but got {type(value)} = {repr(value)}')
-        if value:
-            self._project = val
-        else:
+        if not val:
             if len(self._tasks) > 0:
                 raise RuntimeError(
                     f'Attempt to set project to false but there are still tasks.')
+        self._project = val
 
     @ property
     def tags(self):

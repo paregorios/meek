@@ -100,3 +100,15 @@ class Test_ActivityProject(TestCase):
     def test_false_string(self):
         a = Activity(project='false')
         assert_false(a.project)
+
+    def test_true_to_false(self):
+        a = Activity(project='true')
+        assert_true(a.project)
+        a.project = False
+        assert_false(a.project)
+
+    def test_false_to_true(self):
+        a = Activity(project='false')
+        assert_false(a.project)
+        a.project = True
+        assert_true(a.project)
