@@ -68,3 +68,15 @@ class Test_Activity(TestCase):
         m.list_activities()  # put activity in context
         m.modify_activity('0', project=True)
         assert_true(a.project)
+
+    def test_modify_task_to_project(self):
+        m = Manager()
+        m.new_activity(
+            title='test activity',
+            project=True
+        )
+        a = list(m.activities.values())[0]
+        assert_true(a.project)
+        m.list_activities()  # put activity in context
+        m.modify_activity('0', project=False)
+        assert_false(a.project)
