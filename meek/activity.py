@@ -44,6 +44,8 @@ class Activity:
         self._due = None
         self._not_before = None
         self._complete = False
+        self._project = False
+        self._tasks = []
         self._history = deque()
         self.supported_intervals = [
             'none', 'day', 'workday', 'week', 'month', 'quarter', 'year']
@@ -186,6 +188,24 @@ class Activity:
         self._not_before = iso_datestamp(start_dt)
         if self.mode == 'live':
             self._append_event(f'not_before={self.due}')
+
+    # project: this activity is a project (True) or not
+    # projects have subordinate tasks, which are other activities
+    @property
+    def project(self):
+        return self._project
+
+    @ project.setter
+    def project(self, value):
+        if not isinstance(value, bool):
+            raise TypeError(
+                f'Expected value of type {bool} but got {type(value)} = {repr(value)}')
+        if value:
+            self._project = value
+        else:
+            if len(self._tasks) > 0:
+                raise RuntimeError(
+                    f'Attempt to set project to false but there are still tasks.')
 
     @ property
     def tags(self):
