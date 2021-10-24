@@ -45,7 +45,7 @@ class Activity:
         self._not_before = None
         self._complete = False
         self._project = False
-        self._tasks = []
+        self._tasks = set()
         self._history = deque()
         self.supported_intervals = [
             'none', 'day', 'workday', 'week', 'month', 'quarter', 'year']
@@ -73,7 +73,7 @@ class Activity:
             'title': self.title,
             'complete': self.complete
         }
-        for attrname in ['due', 'tags', 'interval', 'not_before', 'project']:
+        for attrname in ['due', 'tags', 'interval', 'not_before', 'project', 'tasks']:
             v = getattr(self, attrname)
             if v is None:
                 continue
@@ -232,6 +232,47 @@ class Activity:
             self._tags.update(v)
         if self.mode == 'live':
             self._append_event(f'tags={self.tags}')
+
+    # tasks: activities subordinate to this activity, which is therefore a project
+
+    @property
+    def tasks(self):
+        return self._tasks
+
+    @tasks.setter
+    def tasks(self, value):
+        if isinstance(value, list):
+            self.add_tasks(value)
+        elif isinstance(value, (UUID, Activity)):
+            self._add_task(value)
+        else:
+            raise TypeError(
+                f'Expected either a list of values or a single value of type {type(UUID)} or {type(Activity)}. Got {type(value)} = {repr(value)}.')
+
+    def add_tasks(self, value: list):
+        if not isinstance(value, list):
+            raise TypeError(
+                f'Expected a list but got {type(value)} = {repr(value)}.')
+        for v in value:
+            self._add_task(v)
+
+    def remove_tasks(self, value: list):
+        if not isinstance(value, (UUID, Activity)):
+            raise TypeError(
+                f'Expected value of type {type(UUID)} or {type(Activity)} but got {type(value)} = {repr(value)}')
+        id = value
+        if isinstance(value, Activity):
+            id = value.id
+        self._tasks.remove(id.hex)
+
+    def _add_task(self, value):
+        if not isinstance(value, (UUID, Activity)):
+            raise TypeError(
+                f'Expected value of type {type(UUID)} or {type(Activity)} but got {type(value)} = {repr(value)}')
+        id = value
+        if isinstance(value, Activity):
+            id = value.id
+        self._tasks.add(id.hex)
 
     @ property
     def title(self):

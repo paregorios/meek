@@ -183,6 +183,17 @@ class Manager:
         self.current = alist
         return '\n'.join(out_list)
 
+    def incorporate_tasks_into_project(self, project_number: int, task_numbers: int):
+        project = self._contextualize(project_number)[0]
+        if len(task_numbers) == 1:
+            tasks = self._contextualize(task_numbers[0])
+        else:
+            tasks = self._contextualize(task_numbers[0], task_numbers[-1])
+        if len(tasks) > 0:
+            project.project = True
+            project.add_tasks(tasks)
+        return f'Added {len(tasks)} tasks to project {project}.'
+
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'
         i = 0
@@ -355,7 +366,7 @@ class Manager:
                             continue
                     setattr(activity, attrname, value)
 
-    def _contextualize(self, i, j):
+    def _contextualize(self, i, j=None):
         for context in [self.current, list(self.previous)]:
             if context:
                 vals = [i, ]

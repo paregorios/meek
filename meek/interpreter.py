@@ -9,11 +9,14 @@ import logging
 from meek.manager import Manager, UsageError
 from pathlib import Path
 from pprint import pprint
+import re
 import readline
 
 WHERE_DEFAULT = '~/.meek'
 
 logger = logging.getLogger(__name__)
+rx_numeric = re.compile(r'^(?P<numeric>\d+)$')
+rx_numeric_range = re.compile(r'^(?P<start>\d+)\s*-\s*(?P<end>\d+)$')
 
 
 class Interpreter:
@@ -203,6 +206,34 @@ class Interpreter:
             entries = [f'{e[0]}:'.rjust(
                 longest+1) + f' {e[1]}' for e in entries]
             return '\n'.join(entries)
+
+    def _verb_incorporate(self, args, **kwargs):
+        """
+        Incorporate one or more activities as tasks into a single tasks, which is or becomes a project.
+        > incorporate 7 9
+        > incorporate 6-8 9
+        In the above examples, the first numeral or numeric range designates the activities that are to become the subordinate task(s) and the second numeral (9) represents the activity that is or becomes a project.
+        """
+        if not len(args) == 2 or len(kwargs) > 0:
+            self._uerror('incorporate', 'invalid arguments')
+        m = rx_numeric.match(args[0])
+        if m:
+            tasks = [int(m.group('numeric'))]
+        else:
+            m = rx_numeric_range.match(args[0])
+            if m:
+                tasks = [int(m.group('start')), int(m.group('end'))]
+            else:
+                self._uerror(
+                    'incorporate', f'First argument expected numeral or numeric range. Got: {repr(args[0])}.')
+        m = rx_numeric.match(args[1])
+        if m:
+            project = int(m.group('numeric'))
+        else:
+            self._uerror(
+                'incorporate', f'Second argument expected numeral. Got: {repr(args[1])}.'
+            )
+        return self.manager.incorporate_tasks_into_project(project, tasks)
 
     def _verb_info(self, args, **kwargs):
         """
