@@ -193,11 +193,23 @@ class Activity:
 
     @ project.setter
     def project(self, value):
-        if not isinstance(value, bool):
+        if isinstance(value, bool):
+            val = value
+        elif isinstance(value, str):
+            v = value.lower()
+            if v == 'true':
+                val = True
+            elif v == 'false':
+                val = False
+            else:
+                ValueError(
+                    f'Expected string value like "false" or "true" but got "{value}".'
+                )
+        else:
             raise TypeError(
                 f'Expected value of type {bool} but got {type(value)} = {repr(value)}')
         if value:
-            self._project = value
+            self._project = val
         else:
             if len(self._tasks) > 0:
                 raise RuntimeError(
