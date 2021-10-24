@@ -3,6 +3,7 @@
 """Python 3 tests template (changeme)"""
 
 import logging
+from meek.manager import Manager
 from nose.tools import assert_equal, assert_false, assert_true, raises
 from pathlib import Path
 from unittest import TestCase
@@ -34,3 +35,25 @@ class Test_This(TestCase):
     def test_a(self):
         """Change me"""
         pass
+
+
+class Test_Activity(TestCase):
+
+    def test_new_task(self):
+        m = Manager()
+        m.new_activity(
+            title='test task',
+        )
+        a = list(m.activities.values())[0]
+        assert_equal('test task', a.title)
+        assert_false(a.project)
+
+    def test_new_project(self):
+        m = Manager()
+        m.new_activity(
+            title='test project',
+            project=True
+        )
+        a = list(m.activities.values())[0]
+        assert_equal('test project', a.title)
+        assert_true(a.project)
