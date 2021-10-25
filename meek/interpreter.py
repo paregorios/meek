@@ -32,6 +32,7 @@ class Interpreter:
             'del': 'delete',
             'done': 'complete',
             'h': 'help',
+            'i': 'incorporate',
             'ls': 'list',
             'm': 'modify',
             'n': 'new',
@@ -155,6 +156,10 @@ class Interpreter:
         return self._verb_list([], **kwargs)
 
     def _verb_dump(self, args, **kwargs):
+        """
+        Utility function for dumping indices to command line
+            > dump indexes
+        """
         if isinstance(args, list):
             if len(args) == 1:
                 if args[0] == 'indexes':
@@ -366,6 +371,14 @@ class Interpreter:
             > overdue next month
         """
         kwargs['overdue'] = ' '.join(args)
+        return self._verb_list([], **kwargs)
+
+    def _verb_projects(self, args, **kwargs):
+        """
+        List all projects
+            > projects
+        """
+        kwargs['project'] = True
         return self._verb_list([], **kwargs)
 
     def _verb_purge(self, args, **kwargs):

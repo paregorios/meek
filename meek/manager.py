@@ -43,7 +43,8 @@ class Manager:
             'tags': {},
             'due': {},
             'complete': {},
-            'not_before': {}
+            'not_before': {},
+            'project': {}
         }
         self.reverse_index = {}
 
