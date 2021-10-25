@@ -135,6 +135,10 @@ class Activity:
     def history(self):
         return list(self._history)
 
+    def reset_history(self):
+        self._history = deque([e for e in self._history if e.what in [
+                              'title', 'tags', 'id', 'interval']])
+
     @ property
     def id(self):
         return self._id
