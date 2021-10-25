@@ -242,6 +242,8 @@ class Manager:
             raise UsageError(
                 'The first argument must be a number or numeric range.')
         tz = str(get_localzone())
+        logger.debug(f'i: {i}')
+        logger.debug(f'j: {j}')
         alist = self._contextualize(i, j)
         success = 0
         for idx, a in enumerate(alist):
@@ -376,7 +378,7 @@ class Manager:
                 if j is None:
                     alist = [context[i], ]
                 else:
-                    alist = context[i:j]
+                    alist = context[i:j+1]
                 return alist
 
         raise UsageError(f'No activity context is defined.')
@@ -386,19 +388,23 @@ class Manager:
         j = None
         other = []
         if args:
+            logger.debug(f'args: {repr(args)}')
             a = args[0]
             if len(args) > 1:
                 other = args[1:]
             m = rx_numeric.match(a)
             if m:
+                logger.debug(f'numeric match for {repr(a)}')
                 i = int(m.group('numeric'))
             if m is None:
                 m = rx_numeric_range.match(a)
                 if m:
+                    logger.debug(f'numeric range match for {repr(a)}')
                     i = int(m.group('start'))
-                    j = int(m.group('end')) + 1
+                    j = int(m.group('end'))
                 else:
                     other.insert(0, a)
+        logger.debug(f'Results: i={i}, j={j}, other={repr(other)}')
         return (i, j, other)
 
     def _filter_list(self, alist, idxname, argv):
