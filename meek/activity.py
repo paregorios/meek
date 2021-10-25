@@ -263,20 +263,22 @@ class Activity:
     def remove_tasks(self, value: list):
         if not isinstance(value, (UUID, Activity)):
             raise TypeError(
-                f'Expected value of type {type(UUID)} or {type(Activity)} but got {type(value)} = {repr(value)}')
+                f'Expected value of type {UUID} or {Activity} but got {type(value)} = {repr(value)}')
         id = value
         if isinstance(value, Activity):
             id = value.id
         self._tasks.remove(id.hex)
 
     def _add_task(self, value):
-        if not isinstance(value, (UUID, Activity)):
+        if not isinstance(value, (UUID, Activity, str)):
             raise TypeError(
-                f'Expected value of type {type(UUID)} or {type(Activity)} but got {type(value)} = {repr(value)}')
+                f'Expected value of type {UUID}, {Activity}, or {str} but got {type(value)} = {repr(value)}')
         id = value
         if isinstance(value, Activity):
-            id = value.id
-        self._tasks.add(id.hex)
+            id = value.id.hex
+        elif isinstance(value, UUID):
+            id = value.hex
+        self._tasks.add(id)
 
     @ property
     def title(self):
