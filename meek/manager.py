@@ -454,12 +454,16 @@ class Manager:
                 raise NotImplementedError(idxname)
         if isinstance(argv, str):
             val = argv
+            if val.lower() == 'none':
+                val = None
         elif isinstance(argv, list):
             if len(argv) > 1:
                 raise ValueError(
                     f'Only 1 value is supported for filtering by {idxname}. Got {len(argv)} = {repr(argv)}.')
             else:
                 val = argv[0]
+        if val is None:
+            return [a for a in self.activities.values() if a.due is None]
         if val == '':
             val = 'today'
         start_dt, end_dt = comprehend_date(val)
