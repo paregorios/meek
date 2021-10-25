@@ -88,7 +88,7 @@ class Manager:
             alist = context[i:j]
         for a in alist:
             a.complete = True
-        self._index_activity(a)
+            self._index_activity(a)
         if len(alist) == 1:
             msg = f'Marked 1 activity as completed.'
         else:
@@ -107,7 +107,8 @@ class Manager:
         alist = self._contextualize(i, j)
         id_list = [a.id for a in alist]
         for id in id_list:
-            self.activities.pop(id.hex)
+            a = self.activities.pop(id.hex)
+            logger.warning('Deletion will work but indexes will be stale.')
         if len(id_list) == 1:
             return 'Deleted 1 activity.'
         else:
@@ -231,6 +232,7 @@ class Manager:
     def purge(self):
         count = len(self.activities)
         self.activities = dict()
+        logger.warning('Purging works, but indexes will be stale.')
         return f'Purged {count} activities from memory.'
 
     def reschedule_activity(self, args, **kwargs):
@@ -250,7 +252,7 @@ class Manager:
             due_dt = maya.when(a.due, tz)
             if len(other) == 0:
                 if len(kwargs) == 0:
-                    due_dt = due_dt.add(days=1)
+                    due_dt = maya.when('tomorrow', tz)
                 elif len(kwargs) == 1:
                     k = list(kwargs.keys())[0]
                     if k in ['days', 'weeks', 'months', 'years']:
@@ -268,7 +270,11 @@ class Manager:
                     due_dt = start_dt
                 else:
                     raise NotImplementedError(f'arg={arg}')
+            a.reset_history()
             a.due = due_dt
+            if a.not_before is not None:
+                a.not_before = None
+            self._index_activity(a)
             success += 1
         if len(alist) <= 1:
             noun = 'activity'
