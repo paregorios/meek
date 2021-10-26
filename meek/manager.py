@@ -433,6 +433,7 @@ class Manager:
         return (i, j, other)
 
     def _filter_list(self, alist, idxname, argv):
+        logger.debug(f'idxname: {idxname}')
         if idxname == 'not_before':
             return self._filter_list_not_before(alist, argv)
         elif idxname in ['due', 'overdue']:
@@ -449,12 +450,22 @@ class Manager:
             filtervals = [argv, ]
         else:
             raise TypeError(f'argv: {type(argv)}={repr(argv)}')
+        filtervals = [(fv, None)[fv == 'none'] for fv in filtervals]
+        for fv in filtervals:
+            if isinstance(fv, str):
+                if fv == 'none':
+                    fv = None
+        logger.debug(f'filtervals: {repr(filtervals)}')
         result = set(alist)
         for fv in filtervals:
             try:
                 blist = idx[fv]
             except KeyError:
-                blist = list()
+                if fv is None:
+                    blist = [a for a in self.activities.values(
+                    ) if getattr(a, idxname) is None]
+                else:
+                    blist = list()
             result = result.intersection(blist)
         return list(result)
 
