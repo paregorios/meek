@@ -39,7 +39,8 @@ class Interpreter:
             '!': 'overdue',
             'q': 'quit',
             'rm': 'delete',
-            's': 'save'
+            's': 'save',
+            't': 'substasks'
         }
         self.reverse_aliases = {}
         for a, v in self.aliases.items():
@@ -79,6 +80,31 @@ class Interpreter:
             return msg
         else:
             return ''
+
+    def _comprehend_args(self, args):
+        """Deal with numeric arguments."""
+        i = None
+        j = None
+        other = []
+        if args:
+            logger.debug(f'args: {repr(args)}')
+            a = args[0]
+            if len(args) > 1:
+                other = args[1:]
+            m = rx_numeric.match(a)
+            if m:
+                logger.debug(f'numeric match for {repr(a)}')
+                i = int(m.group('numeric'))
+            if m is None:
+                m = rx_numeric_range.match(a)
+                if m:
+                    logger.debug(f'numeric range match for {repr(a)}')
+                    i = int(m.group('start'))
+                    j = int(m.group('end'))
+                else:
+                    other.insert(0, a)
+        logger.debug(f'Results: i={i}, j={j}, other={repr(other)}')
+        return (i, j, other)
 
     def _objectify(self, objects):
         args = []
@@ -430,6 +456,18 @@ class Interpreter:
             raise ValueError(args)
         where = Path(where).expanduser().resolve()
         return self.manager.save_activities(where)
+
+    def _verb_tasks(self, args, **kwargs):
+        """
+        List all the tasks associated with a particular project that's in context.
+            > subtasks 7
+        """
+        if len(kwargs) != 0:
+            raise ValueError(kwargs)
+        i, j, other = self._comprehend_args(args)
+        if j is not None or len(other) != 0:
+            raise ValueError(args)
+        return self.manager.show_tasks(i)
 
     def _verb_warning(self, args, **kwargs):
         """

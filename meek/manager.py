@@ -174,6 +174,18 @@ class Manager:
         msg.append(pformat(self.reverse_index, indent=4))
         return '\n'.join(msg)
 
+    def incorporate_tasks_into_project(self, project_number: int, task_numbers: int):
+        project = self._contextualize(project_number)[0]
+        if len(task_numbers) == 1:
+            tasks = self._contextualize(task_numbers[0])
+        else:
+            tasks = self._contextualize(task_numbers[0], task_numbers[-1])
+        if len(tasks) > 0:
+            project.project = True
+            project.add_tasks(tasks)
+            self._index_activity(project)
+        return f'Added {len(tasks)} tasks to project {project}.'
+
     def list_activities(self, **kwargs):
         alist = self._get_list(**kwargs)
         try:
@@ -184,17 +196,6 @@ class Manager:
             out_list = self._format_list(alist, sort=sortkeys)
         self.current = alist
         return '\n'.join(out_list)
-
-    def incorporate_tasks_into_project(self, project_number: int, task_numbers: int):
-        project = self._contextualize(project_number)[0]
-        if len(task_numbers) == 1:
-            tasks = self._contextualize(task_numbers[0])
-        else:
-            tasks = self._contextualize(task_numbers[0], task_numbers[-1])
-        if len(tasks) > 0:
-            project.project = True
-            project.add_tasks(tasks)
-        return f'Added {len(tasks)} tasks to project {project}.'
 
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'
@@ -323,6 +324,17 @@ class Manager:
                 json.dump(adata.asdict(), f, ensure_ascii=False, indent=4)
             del f
         return f'Wrote {len(self.activities)} JSON files at {where}.'
+
+    def show_tasks(self, project_number):
+        activity = self._contextualize(project_number)[0]
+        tasks = [self.activities[id] for id in activity.tasks]
+        alist = [activity]
+        alist.extend(tasks)
+        out_list = self._format_list(alist, sort=None)
+        self.current = alist
+        msg = out_list[0] + '\n   '
+        msg += '\n   '.join(out_list[1:])
+        return msg
 
     def _apply_keywords(self, activity):
         logger.debug(f'_apply_keywords: activity={repr(activity)}')
