@@ -1,5 +1,11 @@
 # meek
 
+Simple, opinionated, personal activity management at the command line.
+
+Copyright 2021 by Tom Elliott.  
+ipse@paregorios.org  
+See LICENSE.txt
+
 ## How
 
 ```
