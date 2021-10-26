@@ -44,7 +44,8 @@ class Manager:
             'due': {},
             'complete': {},
             'not_before': {},
-            'project': {}
+            'project': {},
+            'interval': {}
         }
         self.reverse_index = {}
 
