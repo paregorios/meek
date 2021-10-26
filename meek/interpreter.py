@@ -40,7 +40,7 @@ class Interpreter:
             'q': 'quit',
             'rm': 'delete',
             's': 'save',
-            't': 'substasks'
+            't': 'tasks'
         }
         self.reverse_aliases = {}
         for a, v in self.aliases.items():
