@@ -403,6 +403,8 @@ class Interpreter:
         """
         List all projects
             > projects
+            > projects stalled:true
+            > projects due:'this month' stalled:false
         """
         kwargs['project'] = True
         return self._verb_list([], **kwargs)
@@ -456,6 +458,15 @@ class Interpreter:
             raise ValueError(args)
         where = Path(where).expanduser().resolve()
         return self.manager.save_activities(where)
+
+    def _verb_stalled(self, args, **kwargs):
+        """
+        List stalled projects (i.e., those without any associated subtasks)
+            > stalled
+            > stalled due:'this quarter'
+        """
+        kwargs['stalled'] = 'True'
+        return self._verb_projects(args, **kwargs)
 
     def _verb_tasks(self, args, **kwargs):
         """

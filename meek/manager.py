@@ -436,6 +436,8 @@ class Manager:
         logger.debug(f'idxname: {idxname}')
         if idxname == 'not_before':
             return self._filter_list_not_before(alist, argv)
+        elif idxname == 'stalled':
+            return [a for a in alist if len(a.tasks) == 0]
         elif idxname in ['due', 'overdue']:
             return self._filter_list_by_date(alist, idxname, argv)
         try:
