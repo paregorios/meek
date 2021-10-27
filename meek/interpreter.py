@@ -143,13 +143,21 @@ class Interpreter:
         """
         Mark activities as complete.
         Requires a context (i.e., first do "list", "overdue", etc.)
-        > complete 1
-        > complete 3-4
+            > complete 1
+            > complete 3-4
         """
         try:
             return self.manager.complete_activity(args, **kwargs)
         except UsageError as err:
             self._uerror('complete', err)
+
+    def _verb_current(self, args, **kwargs):
+        """
+        List activities that are either due this week or tagged 'active'
+            > current
+            > current project:true
+        """
+        return self.manager.list_current(**kwargs)
 
     def _verb_debug(self, args, **kwargs):
         """
@@ -201,7 +209,8 @@ class Interpreter:
 
     def _verb_full(self, args, **kwargs):
         """
-        Display all information for indicated activities.
+        Display all information for indicated activities (requires context).
+            > full 7
         """
         return self.manager.display_full_activities(args, **kwargs)
 
@@ -241,9 +250,9 @@ class Interpreter:
     def _verb_incorporate(self, args, **kwargs):
         """
         Incorporate one or more activities as tasks into a single tasks, which is or becomes a project.
-        > incorporate 7 9
-        > incorporate 6-8 9
-        In the above examples, the first numeral or numeric range designates the activities that are to become the subordinate task(s) and the second numeral (9) represents the activity that is or becomes a project.
+            > incorporate 7 9
+            > incorporate 6-8 9
+            In the above examples, the first numeral or numeric range designates the activities that are to become the subordinate task(s) and the second numeral (9) represents the activity that is or becomes a project.
         """
         if not len(args) == 2 or len(kwargs) > 0:
             self._uerror('incorporate', 'invalid arguments')
@@ -428,13 +437,13 @@ class Interpreter:
         """
         Reschedule a "due" activity.
         Requires a context (i.e., first do "list", "overdue", etc.)
-        > reschedule 1
-          increments due date by one day
-        > reschedule 1 today
-          i.e. modify 1 due:today
-        > reschedule 2-3 tomorrow
-        > reschedule 5 monday
-        > reschedule 7 weeks:2
+            > reschedule 1
+            increments due date by one day
+            > reschedule 1 today
+            i.e. modify 1 due:today
+            > reschedule 2-3 tomorrow
+            > reschedule 5 monday
+            > reschedule 7 weeks:2
         """
         try:
             return self.manager.reschedule_activity(args, **kwargs)
@@ -471,7 +480,7 @@ class Interpreter:
     def _verb_tasks(self, args, **kwargs):
         """
         List all the tasks associated with a particular project that's in context.
-            > subtasks 7
+            > tasks 7
         """
         if len(kwargs) != 0:
             raise ValueError(kwargs)

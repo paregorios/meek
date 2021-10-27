@@ -198,6 +198,27 @@ class Manager:
         self.current = alist
         return '\n'.join(out_list)
 
+    def list_current(self, **kwargs):
+        try:
+            kwargs['due']
+        except KeyError:
+            kwargs['due'] = 'this week'
+        try:
+            kwargs['interval']
+        except KeyError:
+            kwargs['interval'] = None
+        alist = self._get_list(**kwargs)
+        alist = self._filter_list(alist, 'tags', 'active', operator='or')
+        alist = self._filter_list(alist, 'complete', False)
+        try:
+            sortkeys = kwargs['sort']
+        except KeyError:
+            out_list = self._format_list(alist)
+        else:
+            out_list = self._format_list(alist, sort=sortkeys)
+        self.current = alist
+        return '\n'.join(out_list)
+
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'
         i = 0
@@ -432,19 +453,29 @@ class Manager:
         logger.debug(f'Results: i={i}, j={j}, other={repr(other)}')
         return (i, j, other)
 
-    def _filter_list(self, alist, idxname, argv):
+    def _filter_list(self, alist, idxname, argv, operator='and'):
         logger.debug(f'idxname: {idxname}')
         if idxname == 'not_before':
             return self._filter_list_not_before(alist, argv)
         elif idxname == 'stalled':
-            return [a for a in alist if len(a.tasks) == 0]
+            blist = [a for a in alist if len(a.tasks) == 0]
+            result = set(alist)
+            if operator == 'and':
+                result = result.intersection(blist)
+            elif operator == 'or':
+                result = result.union(blist)
+            else:
+                raise ValueError(
+                    f'operator={operator}. Expected "and" or "or".')
         elif idxname in ['due', 'overdue']:
             return self._filter_list_by_date(alist, idxname, argv)
         try:
             idx = self.indexes[idxname]
         except KeyError:
             raise NotImplementedError(idxname)
-        if isinstance(argv, str):
+        if argv is None:
+            filtervals = [argv, ]
+        elif isinstance(argv, str):
             filtervals = [argv.lower(), ]
         elif isinstance(argv, list):
             filtervals = [val.lower() for val in argv]
@@ -452,7 +483,8 @@ class Manager:
             filtervals = [argv, ]
         else:
             raise TypeError(f'argv: {type(argv)}={repr(argv)}')
-        filtervals = [(fv, None)[fv == 'none'] for fv in filtervals]
+        filtervals = [(fv, None)[fv is None or fv == 'none']
+                      for fv in filtervals]
         for fv in filtervals:
             if isinstance(fv, str):
                 if fv == 'none':
@@ -468,7 +500,13 @@ class Manager:
                     ) if getattr(a, idxname) is None]
                 else:
                     blist = list()
-            result = result.intersection(blist)
+            if operator == 'and':
+                result = result.intersection(blist)
+            elif operator == 'or':
+                result = result.union(blist)
+            else:
+                raise ValueError(
+                    f'operator={operator}. Expected "and" or "or".')
         return list(result)
 
     def _filter_list_by_date(self, alist, idxname, argv):
