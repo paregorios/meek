@@ -54,5 +54,4 @@ Aliases: n
 - Export to markdown
 - add start/end times to activities tagged "event"? and add functions around that?
 - add "not" filter for listings, e.g., "due this week not today" or "due this week not:today" or "due this week not(due:today") -- I like the last of these syntaxes
-- auto-prune history on daily and weekly activities leaving only most recent cycle of completion (keep history and JSON from getting too huge)
-
+- improve words indexing so that punctuation characters (like parentheses are stripped from the index)
