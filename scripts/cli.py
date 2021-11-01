@@ -4,6 +4,7 @@
 Command-line interface for meek
 """
 
+from re import A
 from airtight.cli import configure_commandline
 from meek.interpreter import Interpreter
 from meek.norm import norm
@@ -31,15 +32,31 @@ POSITIONAL_ARGUMENTS = [
 
 def interact():
     i = Interpreter()
-    while True:
+    while True:  # keep taking commands until something breaks us out to finish the program
         try:
             s = norm(input('> '))
         except KeyboardInterrupt:
             i.parse('quit')
-        parts = shlex.split(s)
-        result = i.parse(parts)
-        if result != '':
-            print(result)
+        while True:  # try to fix common errors and re-parse
+            parts = list()
+            try:
+                parts = shlex.split(s)
+            except ValueError as err:
+                msg = str(err)
+                if s[0:4] == 'new ':
+                    if s[4] == '"' and s[-1] == "'" and len([c for c in s[4:] if c == "'"]) % 2 == 0:
+                        foo = list(s)
+                        foo[-1] = '"'
+                        s = ''.join(foo)
+                else:
+                    logger.error(f'ValueError: {msg}')
+                    break  # need new input
+                continue  # try to split corrected string
+            if parts:
+                result = i.parse(parts)
+                if result:
+                    print(result)
+            break
 
 
 def main(**kwargs):
