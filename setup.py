@@ -9,14 +9,13 @@ setuptools.setup(
     author="Tom Elliott",
     author_email="tom.elliott@nyu.edu",
     description="manage activities",
-    license='MIT',
     long_description=long_description,
     long_description_content_type="text/markdown",
     # {project-url}
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3.9.7",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU Affero General Public License v3",
         "Operating System :: OS Independent",
     ],
     install_requires=[
