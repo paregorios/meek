@@ -23,6 +23,8 @@ class Interpreter:
 
     def __init__(self):
         self.manager = Manager()
+        self.loaded = False
+        self.modified = True
         self.verbs = [a[6:] for a in dir(self) if a.startswith('_verb_')]
         self.aliases = {
             '?': 'help',
@@ -147,9 +149,12 @@ class Interpreter:
             > complete 3-4
         """
         try:
-            return self.manager.complete_activity(args, **kwargs)
+            result = self.manager.complete_activity(args, **kwargs)
         except UsageError as err:
             self._uerror('complete', err)
+        else:
+            self.modified = True
+            return result
 
     def _verb_current(self, args, **kwargs):
         """
@@ -173,9 +178,12 @@ class Interpreter:
             > delete 3-5
         """
         try:
-            return self.manager.delete_activity(args, **kwargs)
+            result = self.manager.delete_activity(args, **kwargs)
         except UsageError as err:
             self._uerror('delete', err)
+        else:
+            self.modified = True
+            return result
 
     def _verb_due(self, args, **kwargs):
         """
@@ -273,7 +281,9 @@ class Interpreter:
             self._uerror(
                 'incorporate', f'Second argument expected numeral. Got: {repr(args[1])}.'
             )
-        return self.manager.incorporate_tasks_into_project(project, tasks)
+        result = self.manager.incorporate_tasks_into_project(project, tasks)
+        self.modified = True
+        return result
 
     def _verb_info(self, args, **kwargs):
         """
@@ -356,7 +366,13 @@ class Interpreter:
         else:
             raise ValueError(args)
         where = Path(where).expanduser().resolve()
-        return self.manager.load_activities(where)
+        result = self.manager.load_activities(where)
+        m = re.match(r'^Loaded (\d+) activities from JSON files at .+$', result):
+        if m is not None:
+            if m.group(1) != '0':
+                self.loaded = True
+                self.modified = False
+        return result
 
     def _verb_modify(self, args, **kwargs):
         """
@@ -370,9 +386,12 @@ class Interpreter:
             > modify 3 tags:cat,dog
         """
         try:
-            return self.manager.modify_activity(args, **kwargs)
+            result = self.manager.modify_activity(args, **kwargs)
         except UsageError as err:
             self._uerror('modify', err)
+        else:
+            self.modified = True
+            return result
 
     def _verb_new(self, args, **kwargs):
         """
@@ -394,7 +413,9 @@ class Interpreter:
                 kwargs['title'] = ' '.join(args)
             else:
                 raise ValueError(f'args: {args}, kwargs: {kwargs}')
-        return self.manager.new_activity(**kwargs)
+        result = self.manager.new_activity(**kwargs)
+        self.modified = True
+        return result
 
     def _verb_overdue(self, args, **kwargs):
         """
@@ -423,7 +444,9 @@ class Interpreter:
         Clear all activities and indexes.
             > purge
         """
-        return self.manager.purge()
+        result = self.manager.purge()
+        self.modified = False
+        return result
 
     def _verb_quit(self, args, **kwargs):
         """
@@ -431,6 +454,18 @@ class Interpreter:
             > quit
             WARNING: unsaved data will be lost (use "save" first)
         """
+        if self.loaded and self.modified:
+            allow = False
+            try:
+                f = kwargs['force']
+            except KeyError:
+                pass
+            else:
+                f = f.lower()
+                if f == 'true':
+                    allow = True
+            if not allow:
+                return 'Quitting without force:true not permitted unless you have first saved all changes.'
         exit()
 
     def _verb_reschedule(self, args, **kwargs):
@@ -446,9 +481,12 @@ class Interpreter:
             > reschedule 7 weeks:2
         """
         try:
-            return self.manager.reschedule_activity(args, **kwargs)
+            result = self.manager.reschedule_activity(args, **kwargs)
         except UsageError as err:
             self._uerror('modify', err)
+        else:
+            self.modified = True
+            return result
 
     def _verb_save(self, args, **kwargs):
         """
@@ -459,6 +497,18 @@ class Interpreter:
               saves to indicated path
               WARNING: deletes existing content
         """
+        if not self.loaded:
+            allow = False
+            try:
+                f = kwargs['force']
+            except KeyError:
+                pass
+            else:
+                f = f.lower()
+                if f == 'true':
+                    allow = True
+            if not allow:
+                return 'Saving without force:true not permitted if you have not first loaded.'
         if len(args) == 0:
             where = WHERE_DEFAULT
         elif len(args) == 1:
@@ -466,7 +516,9 @@ class Interpreter:
         else:
             raise ValueError(args)
         where = Path(where).expanduser().resolve()
-        return self.manager.save_activities(where)
+        result = self.manager.save_activities(where)
+        self.modified = False
+        return result
 
     def _verb_stalled(self, args, **kwargs):
         """
