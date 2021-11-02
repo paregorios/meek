@@ -4,14 +4,19 @@
 Manager for meek
 """
 
+import chardet
+import codecs
 from collections import deque
 from copy import copy
 from meek.dates import comprehend_date, iso_datestamp
+from meek.norm import norm
+import mimetypes
 import json
 import logging
 import maya
 from meek.activity import Activity
 from meek.dates import comprehend_date
+import os
 import pathlib
 from pprint import pformat, pprint
 import re
@@ -20,6 +25,9 @@ from tzlocal import get_localzone
 
 
 logger = logging.getLogger(__name__)
+mimetypes.init()
+mimetypes.add_type('text/markdown', '.md')
+mimetypes.add_type('text/markdown', '.markdown')
 rx_numeric = re.compile(r'^(?P<numeric>\d+)$')
 rx_numeric_range = re.compile(r'^(?P<start>\d+)\s*-\s*(?P<end>\d+)$')
 
@@ -174,6 +182,41 @@ class Manager:
         msg.append(pformat(self.indexes, indent=4))
         msg.append(pformat(self.reverse_index, indent=4))
         return '\n'.join(msg)
+
+    def import_activities(self, path, **kwargs):
+        if isinstance(path, str):
+            inpath = pathlib.Path(path).expanduser().resolve()
+        elif isinstance(path, pathlib.Path):
+            inpath = path
+        else:
+            raise TypeError(
+                f'Expected {pathlib.Path} or {str} for "path" but got {type(path)}={repr(path)}.')
+        mime, encoding = mimetypes.guess_type(inpath, strict=False)
+        if mime is None:
+            raise RuntimeError('Cannot determined file type.')
+        num_bytes = min(2048, os.path.getsize(inpath))
+        raw = open(inpath, 'rb').read(num_bytes)
+        if raw.startswith(codecs.BOM_UTF8):
+            character_encoding = 'utf-8-sig'
+        else:
+            character_encoding = chardet.detect(raw)['encoding']
+        with open(inpath, 'r', encoding=character_encoding) as f:
+            if mime.startswith('text/'):
+                data = f.read()
+            else:
+                return f'Error: Unsupported mimetype ({mime}).'
+        del f
+        # NB: nested lists in markdown are flattened
+        data = [norm(datum) for datum in data.split('\n')]
+        data = [datum for datum in data if datum != '']
+        bullets = [datum[2:] for datum in data if datum[0:2] in ['- ', '* ']]
+        if bullets:
+            data = bullets
+        result = list()
+        for datum in data:
+            result.append(self.new_activity(title=datum, **kwargs))
+        sep = '\n\t'
+        return f'Created {len(result)} activities:{sep}{sep.join(result)}'
 
     def incorporate_tasks_into_project(self, project_number: int, task_numbers: int):
         project = self._contextualize(project_number)[0]

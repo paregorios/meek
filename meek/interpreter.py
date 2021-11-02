@@ -255,6 +255,24 @@ class Interpreter:
                 longest+1) + f' {e[1]}' for e in entries]
             return '\n'.join(entries)
 
+    def _verb_import(self, args, **kwargs):
+        """
+        Import activities from an external file.
+            > import path/to/file
+            > import path/to/file due:friday tags:personal
+              (keyword arguments used here are applied to all imported activities)
+        """
+        result = None
+        if len(args) == 0:
+            self._uerror('import', 'Path to file required for import')
+        elif len(args) > 1:
+            self._uerror(
+                'import', 'Too many arguments. Expected one (path to file).')
+        else:
+            result = self.manager.import_activities(args[0], **kwargs)
+        self.modified = True
+        return result
+
     def _verb_incorporate(self, args, **kwargs):
         """
         Incorporate one or more activities as tasks into a single tasks, which is or becomes a project.
@@ -367,7 +385,8 @@ class Interpreter:
             raise ValueError(args)
         where = Path(where).expanduser().resolve()
         result = self.manager.load_activities(where)
-        m = re.match(r'^Loaded (\d+) activities from JSON files at .+$', result):
+        m = re.match(
+            r'^Loaded (\d+) activities from JSON files at .+$', result)
         if m is not None:
             if m.group(1) != '0':
                 self.loaded = True

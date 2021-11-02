@@ -20,7 +20,8 @@ setuptools.setup(
     ],
     install_requires=[
         'airtight',
-        'maya@git+https://github.com/timofurrer/maya#b12a8dad11aec99ef62b063b5631dce0f528bcb4',
+        'chardet',
+        'maya@git+https://github.com/timofurrer/maya@b12a8dad11aec99ef62b063b5631dce0f528bcb4#egg=maya',
         'textnorm',
         'tzlocal'
     ],
