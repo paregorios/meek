@@ -169,40 +169,6 @@ class Interpreter:
         """
         return self.manager.list_current(**kwargs)
 
-    def _verb_today(self, args, **kwargs):
-        """
-        List activities that are either overdue as of today or tagged 'active'
-            > today
-            > today project:true
-        Unlike "current", interval:any is included by default
-        """
-        try:
-            kwargs['interval']
-        except KeyError:
-            kwargs['interval'] = 'any'  # override defaults in list_current
-        try:
-            kwargs['overdue']
-        except KeyError:
-            kwargs['overdue'] = 'today'
-        return self.manager.list_current(**kwargs)
-
-    def _verb_tomorrow(self, args, **kwargs):
-        """
-        List activities that are either overdue as of tomorrow or tagged 'active'
-            > tomorrow
-            > tomorrow project:true
-        Unlike "current", interval:any is included by default
-        """
-        try:
-            kwargs['interval']
-        except KeyError:
-            kwargs['interval'] = 'any'  # override defaults in list_current
-        try:
-            kwargs['overdue']
-        except KeyError:
-            kwargs['overdue'] = 'tomorrow'
-        return self.manager.list_current(**kwargs)
-
     def _verb_debug(self, args, **kwargs):
         """
         Change logging level to DEBUG
@@ -650,6 +616,40 @@ class Interpreter:
         if j is not None or len(other) != 0:
             raise ValueError(args)
         return self.manager.show_tasks(i)
+
+    def _verb_today(self, args, **kwargs):
+        """
+        List activities that are either overdue as of today or tagged 'active'
+            > today
+            > today project:true
+        Unlike "current", interval:any is included by default
+        """
+        try:
+            kwargs['interval']
+        except KeyError:
+            kwargs['interval'] = 'any'  # override defaults in list_current
+        try:
+            kwargs['overdue']
+        except KeyError:
+            kwargs['overdue'] = 'today'
+        return self.manager.list_current(**kwargs)
+
+    def _verb_tomorrow(self, args, **kwargs):
+        """
+        List activities that are either overdue as of tomorrow or tagged 'active'
+            > tomorrow
+            > tomorrow project:true
+        Unlike "current", interval:any is included by default
+        """
+        try:
+            kwargs['interval']
+        except KeyError:
+            kwargs['interval'] = 'any'  # override defaults in list_current
+        try:
+            kwargs['overdue']
+        except KeyError:
+            kwargs['overdue'] = 'tomorrow'
+        return self.manager.list_current(**kwargs)
 
     def _verb_warning(self, args, **kwargs):
         """
