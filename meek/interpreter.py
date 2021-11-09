@@ -369,16 +369,19 @@ class Interpreter:
                 self._uerror(
                     'later', f'Incorrect number of arguments: {len(other)}')
                 return None
-            if not unit[-1] == 's':
-                unit = f'{unit}s'
-            now = maya.now()
-            then = now.add(**{unit: qty})
-            if j is None:
-                m_arg = [f'{i}', ]
-            else:
-                m_arg = [f'{i}-{j}', ]
-            return self.manager.modify_activity(
-                m_arg, **{'not_before': then.iso8601()})
+        else:
+            unit = 'hours'
+            qty = 1
+        if not unit[-1] == 's':
+            unit = f'{unit}s'
+        now = maya.now()
+        then = now.add(**{unit: qty})
+        if j is None:
+            m_arg = [f'{i}', ]
+        else:
+            m_arg = [f'{i}-{j}', ]
+        return self.manager.modify_activity(
+            m_arg, **{'not_before': then.iso8601()})
 
     def _verb_list(self, args, **kwargs):
         """
