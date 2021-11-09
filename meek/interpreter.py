@@ -159,10 +159,46 @@ class Interpreter:
 
     def _verb_current(self, args, **kwargs):
         """
-        List activities that are either due this week or tagged 'active'
+        List activities that are either (over)due this week or tagged 'active'
             > current
             > current project:true
+            > current interval:any
+              (includes interval:day, which is excluded by default)
         """
+        return self.manager.list_current(**kwargs)
+
+    def _verb_today(self, args, **kwargs):
+        """
+        List activities that are either overdue as of today or tagged 'active'
+            > today
+            > today project:true
+        Unlike "current", interval:any is included by default
+        """
+        try:
+            kwargs['interval']
+        except KeyError:
+            kwargs['interval'] = 'any'  # override defaults in list_current
+        try:
+            kwargs['overdue']
+        except KeyError:
+            kwargs['overdue'] = 'today'
+        return self.manager.list_current(**kwargs)
+
+    def _verb_tomorrow(self, args, **kwargs):
+        """
+        List activities that are either overdue as of tomorrow or tagged 'active'
+            > tomorrow
+            > tomorrow project:true
+        Unlike "current", interval:any is included by default
+        """
+        try:
+            kwargs['interval']
+        except KeyError:
+            kwargs['interval'] = 'any'  # override defaults in list_current
+        try:
+            kwargs['overdue']
+        except KeyError:
+            kwargs['overdue'] = 'tomorrow'
         return self.manager.list_current(**kwargs)
 
     def _verb_debug(self, args, **kwargs):

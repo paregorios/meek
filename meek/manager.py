@@ -243,11 +243,14 @@ class Manager:
 
     def list_current(self, **kwargs):
         try:
-            kwargs['due']
+            kwargs['overdue']
         except KeyError:
-            kwargs['due'] = 'this week'
+            try:
+                kwargs['due']
+            except KeyError:
+                kwargs['overdue'] = 'this week'
         try:
-            kwargs['interval']
+            interval = kwargs['interval']
         except KeyError:
             kwargs['interval'] = None
         alist = self._get_list(**kwargs)
@@ -498,6 +501,11 @@ class Manager:
 
     def _filter_list(self, alist, idxname, argv, operator='and'):
         logger.debug(f'idxname: {idxname}')
+        if argv == 'any':
+            if operator == 'and':
+                return alist
+            else:
+                raise NotImplementedError('Flee, you fools!')
         if idxname == 'not_before':
             return self._filter_list_not_before(alist, argv)
         elif idxname == 'stalled':
@@ -589,6 +597,7 @@ class Manager:
             matches = [a for k, a in idx.items() if k >= start and k <= end]
             blist = [item for sublist in matches for item in sublist]
         elif idxname == 'overdue':
+            print(f'overdue: (start={start}, end={end}')
             matches = [a for k, a in idx.items() if k <= end]
             blist = [item for sublist in matches for item in sublist]
         result = set(alist)
