@@ -681,8 +681,9 @@ class Manager:
 
     def _get_list(self, **kwargs):
         alist = list(self.activities.values())
+        blist = copy(alist)
         if not kwargs:
-            return self._filter_list_not_before(alist, 'today')
+            return self._filter_list_not_before(blist, 'today')
         try:
             c = kwargs['complete']
         except KeyError:
@@ -708,15 +709,28 @@ class Manager:
         try:
             nb = kwargs['not_before']
         except KeyError:
-            alist = self._filter_list_not_before(alist, 'today')
+            blist = self._filter_list_not_before(blist, 'today')
         else:
             if nb in ['any', 'all']:
                 kwargs.pop('not_before')
+
+        try:
+            or_list = kwargs['or']
+        except KeyError:
+            or_list = list()
         for k, argv in kwargs.items():
-            if k == 'sort':
+            if k in ['sort', 'or'] or k in or_list:
                 continue
-            alist = self._filter_list(alist, k, argv)
-        return alist
+            blist = self._filter_list(blist, k, argv)
+        if or_list:
+            or_activities = dict()
+            or_activities_set = set()
+            for k in or_list:
+                or_activities[k] = self._filter_list(
+                    alist, k, kwargs[k])  # sic
+                or_activities_set = or_activities_set.union(or_activities[k])
+            blist = list(or_activities_set.intersection(blist))
+        return blist
 
     def _index_activity(self, activity):
         try:

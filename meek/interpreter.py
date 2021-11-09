@@ -66,17 +66,19 @@ class Interpreter:
             try:
                 verb = self.aliases[verb]
             except KeyError:
-                try:
-                    self.manager.indexes['tags'][verb]
-                except KeyError:
+                kwargs = dict()
+                for k in ['tags', 'words']:
                     try:
-                        self.manager.indexes['words'][verb]
+                        self.manager.indexes[k][verb]
                     except KeyError:
-                        return f'Unrecognized verb "{verb}"'
+                        pass
                     else:
-                        return self.manager.list_activities(words=verb)
-                else:
-                    return self.manager.list_activities(tags=verb)
+                        kwargs[k] = verb
+                if len(kwargs) == 0:
+                    return f'Unrecognized verb "{verb}"'
+                elif len(kwargs) > 1:
+                    kwargs['or'] = list(kwargs.keys())
+                return self.manager.list_activities(**kwargs)
         args, kwargs = self._objectify(objects)
         msg = getattr(self, f'_verb_{verb}')(args, **kwargs)
         if msg is not None:
