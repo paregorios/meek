@@ -259,12 +259,13 @@ class Manager:
             except KeyError:
                 kwargs['overdue'] = 'this week'
         try:
-            interval = kwargs['interval']
+            kwargs['interval']
         except KeyError:
             kwargs['interval'] = None
+        kwargs['tags'] = 'active'
+        kwargs['complete'] = False
+        kwargs['or'] = ['overdue', 'tags']
         alist = self._get_list(**kwargs)
-        alist = self._filter_list(alist, 'tags', 'active', operator='or')
-        alist = self._filter_list(alist, 'complete', False)
         try:
             sortkeys = kwargs['sort']
         except KeyError:
