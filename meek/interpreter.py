@@ -6,6 +6,7 @@ Command interpreter for meek
 
 from inspect import getdoc
 import logging
+import maya
 from meek.manager import Manager, UsageError
 from pathlib import Path
 from pprint import pprint
@@ -322,6 +323,58 @@ class Interpreter:
         }
         val = levels[logging.root.level]
         return f'Logging level is now {val}'
+
+    def _verb_later(self, args, **kwargs):
+        """
+        Mark activity/ies with a not_before time so they are temporarily hidden from listings.
+            > later 7 1 hour
+            > later 1-5 20 minutes
+            > later 2
+              (defaults to 1 hour)
+        """
+        i, j, other = self._comprehend_args(args)
+        qty = 1
+        unit = 'hour'
+        units = ['minute', 'minutes', 'hour',
+                 'hours', 'day', 'days', 'week', 'weeks']
+        if other:
+            if len(other) == 1:
+                try:
+                    qty = int(other[0])
+                except TypeError:
+                    if other[0] in units:
+                        unit = other[0]
+                    else:
+                        self._uerror(
+                            'later', f'Unsupported unit value "{other[0]}". Supported: {repr(units)}.')
+                        return None
+            elif len(other) == 2:
+                try:
+                    qty = int(other[0])
+                except TypeError:
+                    self._uerror(
+                        'later', f'Expected integer value for first argument. Got {other[0]}.')
+                    return None
+                if other[1] in units:
+                    unit = other[1]
+                else:
+                    self._uerror(
+                        'later', f'Unsupported unit value "{other[1]}". Supported: {repr(units)}.')
+                    return None
+            else:
+                self._uerror(
+                    'later', f'Incorrect number of arguments: {len(other)}')
+                return None
+            if not unit[-1] == 's':
+                unit = f'{unit}s'
+            now = maya.now()
+            then = now.add(**{unit: qty})
+            if j is None:
+                m_arg = [f'{i}', ]
+            else:
+                m_arg = [f'{i}-{j}', ]
+            return self.manager.modify_activity(
+                m_arg, **{'not_before': then.iso8601()})
 
     def _verb_list(self, args, **kwargs):
         """

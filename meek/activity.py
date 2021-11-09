@@ -185,7 +185,11 @@ class Activity:
     @ not_before.setter
     def not_before(self, value):
         start_dt, end_dt = comprehend_date(value)
-        self._not_before = iso_datestamp(start_dt)
+        tomorrow = maya.when('tomorrow', tz)
+        if start_dt >= tomorrow:
+            self._not_before = iso_datestamp(start_dt)
+        else:
+            self._not_before = start_dt
         if self.mode == 'live':
             self._append_event(f'not_before={self.due}')
 
