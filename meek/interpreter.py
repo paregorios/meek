@@ -80,7 +80,10 @@ class Interpreter:
                     kwargs['or'] = list(kwargs.keys())
                 return self.manager.list_activities(**kwargs)
         args, kwargs = self._objectify(objects)
-        msg = getattr(self, f'_verb_{verb}')(args, **kwargs)
+        try:
+            msg = getattr(self, f'_verb_{verb}')(args, **kwargs)
+        except UsageError as err:
+            msg = self._uerror(verb, err)
         if msg is not None:
             return msg
         else:

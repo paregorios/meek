@@ -475,8 +475,15 @@ class Manager:
                     try:
                         context[n]
                     except IndexError:
+                        l = len(context)
+                        if l == 0:
+                            suffix = 'none set'
+                        elif l == 1:
+                            suffix = '0'
+                        else:
+                            suffix = f'0-{l - 1}'
                         raise UsageError(
-                            f'Supplied index {n} is not in context (0-{len(context)})')
+                            f'Supplied index {n} is not in context ({suffix})')
                 if j is None:
                     alist = [context[i], ]
                 else:
