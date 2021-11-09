@@ -177,10 +177,19 @@ class Manager:
         d = a.asdict()
         return pformat(d, indent=4, sort_dicts=True)
 
-    def dump_indexes(self):
+    def dump_indexes(self, args):
         msg = []
-        msg.append(pformat(self.indexes, indent=4))
-        msg.append(pformat(self.reverse_index, indent=4))
+        if len(args) > 1:
+            idxx = args[1:]
+            for idx in idxx:
+                if idx == 'reverse':
+                    msg.append(pformat(self.reverse_index, indent=4))
+                else:
+                    msg.append(
+                        f'{idx}: {pformat(self.indexes[idx], indent=4)}')
+        else:
+            msg.append(pformat(self.indexes, indent=4))
+            msg.append(pformat(self.reverse_index, indent=4))
         return '\n'.join(msg)
 
     def import_activities(self, path, **kwargs):

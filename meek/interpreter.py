@@ -240,9 +240,9 @@ class Interpreter:
             > dump indexes
         """
         if isinstance(args, list):
-            if len(args) == 1:
+            if len(args) >= 1:
                 if args[0] == 'indexes':
-                    return self.manager.dump_indexes()
+                    return self.manager.dump_indexes(args)
         raise NotImplementedError(args)
 
     def _verb_error(self, args, **kwargs):
