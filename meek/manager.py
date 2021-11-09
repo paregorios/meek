@@ -607,7 +607,6 @@ class Manager:
             matches = [a for k, a in idx.items() if k >= start and k <= end]
             blist = [item for sublist in matches for item in sublist]
         elif idxname == 'overdue':
-            print(f'overdue: (start={start}, end={end}')
             matches = [a for k, a in idx.items() if k <= end]
             blist = [item for sublist in matches for item in sublist]
         result = set(alist)
