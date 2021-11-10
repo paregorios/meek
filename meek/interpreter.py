@@ -522,12 +522,15 @@ class Interpreter:
                 self._uerror(
                     'notes', f'Numeric ranges not supported. Notes can be added only to a single activity at a time.'
                 )
-            elif other[0] != 'add':
-                self._uerror(
-                    'notes', f'Expected "add" for second argument, but got {other[0]}'
-                )
-            else:
+            elif other[0] == 'add':
                 return self.manager.add_note(i, ' '.join(other[1:]))
+            elif other[0] == 'list':
+                return self.manager.list_notes(i)
+            else:
+                self._uerror(
+                    'notes', f'Expected "add" or "list" for second argument, but got {other[0]}'
+                )
+
         return ''
 
     def _verb_overdue(self, args, **kwargs):

@@ -282,6 +282,13 @@ class Manager:
         self.current = alist
         return '\n'.join(out_list)
 
+    def list_notes(self, activity_number: int):
+        alist = self._contextualize(activity_number)
+        a = alist[0]
+        notes = a.notes
+        notes = [f'{n[1].split("T")[0]}: {n[0]}' for n in notes]
+        return '\n'.join(notes)
+
     def load_activities(self, where: pathlib.Path):
         activity_dir = where / 'activities'
         i = 0
