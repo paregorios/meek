@@ -48,7 +48,7 @@ class Activity:
         self._tasks = set()
         self._history = deque()
         self.supported_intervals = [
-            'none', 'day', 'workday', 'week', 'month', 'quarter', 'year']
+            'none', 'day', 'workday', 'week', 'biweekly', 'month', 'quarter', 'year']
         self._interval = None
         self.mode = mode
         # keeps events out of history if mode is not "live", e.g., reload from json
@@ -322,6 +322,8 @@ class Activity:
             return
         if self.interval == 'quarter':
             kwargs = {'months': 3}
+        elif self.interval == 'biweekly':
+            kwargs = {'weeks': 2}
         else:
             kwargs = {f'{self.interval}s': 1}
         today = maya.when('today', tz)
