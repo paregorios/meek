@@ -63,6 +63,13 @@ class Manager:
         self._index_activity(activity)
         return activity
 
+    def add_note(self, activity_number: int, note_text: str):
+        """ Add a note to the indicated activity. """
+        activities = self._contextualize(activity_number)
+        a = activities[0]
+        a.add_note(note_text)
+        return f'Added note to activity "{a.title}"'
+
     def complete_activity(self, args, **kwargs):
         context = self.current
         if len(context) == 0:

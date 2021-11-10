@@ -52,6 +52,7 @@ class Activity:
         self._interval = None
         self.mode = mode
         # keeps events out of history if mode is not "live", e.g., reload from json
+        self._notes = dict()
         for k, arg in kwargs.items():
             if k == 'history':
                 for d in arg:
@@ -73,7 +74,7 @@ class Activity:
             'title': self.title,
             'complete': self.complete
         }
-        for attrname in ['due', 'tags', 'interval', 'not_before', 'project', 'tasks']:
+        for attrname in ['due', 'tags', 'interval', 'not_before', 'project', 'tasks', 'notes']:
             v = getattr(self, attrname)
             if v is None:
                 continue
@@ -177,7 +178,24 @@ class Activity:
         if self.mode == 'live':
             self._append_event(f'interval={self.interval}')
 
+    # notes
+
+    @ property
+    def notes(self):
+        note_list = [(n, k) for k, n in self._notes.items()]
+        note_list.sort(key=lambda t: t[1])
+        return note_list
+
+    @ notes.deleter
+    def notes(self):
+        self._notes = dict()
+
+    def add_note(self, value):
+        k = maya.now().iso8601()
+        self._notes[k] = norm(value)
+
     # not before: keep out of most listings until this date
+
     @ property
     def not_before(self):
         return self._not_before

@@ -117,23 +117,26 @@ class Interpreter:
     def _objectify(self, objects):
         args = []
         kwargs = {}
+        logger.debug(f'objects: {repr(objects)}')
         for o in objects:
             k = None
-            for delim in [':', '=']:
-                if delim in o:
-                    parts = o.split(delim)
-                    k = parts[0]
-                    try:
-                        v = parts[1]
-                    except IndexError:
-                        v = None
-                    else:
-                        if ',' in v:
-                            v = v.split(',')
-                    kwargs[k] = v
-                    break
+            if not o.startswith('http'):
+                for delim in [':', '=']:
+                    if delim in o:
+                        parts = o.split(delim)
+                        k = parts[0]
+                        try:
+                            v = parts[1]
+                        except IndexError:
+                            v = None
+                        else:
+                            if ',' in v:
+                                v = v.split(',')
+                        kwargs[k] = v
+                        break
             if k is None:
                 args.append(o)
+        logger.debug(f'args: {repr(args)}')
         return (args, kwargs)
 
     def _uerror(self, verb: str, exception: Exception):
@@ -498,6 +501,34 @@ class Interpreter:
         result = self.manager.new_activity(**kwargs)
         self.modified = True
         return result
+
+    def _verb_notes(self, args, **kwargs):
+        """
+        Manipulate notes on an activity.
+            > notes 7 add some note text
+              (creates a note on context activity 7 with text 'some note text')
+            > notes 7 list
+              (lists any notes on context activity 7)
+        """
+        if len(args) < 2:
+            self._uerror(
+                'notes', f'Expected at least two 2 arguments, got {len(args)}.')
+        else:
+            i, j, other = self._comprehend_args(args)
+            if not isinstance(i, int):
+                self._uerror(
+                    'notes', f'Expected numeral for first argument, but got {type(i)}={repr(i)}')
+            elif j is not None:
+                self._uerror(
+                    'notes', f'Numeric ranges not supported. Notes can be added only to a single activity at a time.'
+                )
+            elif other[0] != 'add':
+                self._uerror(
+                    'notes', f'Expected "add" for second argument, but got {other[0]}'
+                )
+            else:
+                return self.manager.add_note(i, ' '.join(other[1:]))
+        return ''
 
     def _verb_overdue(self, args, **kwargs):
         """
