@@ -11,7 +11,6 @@ from copy import copy
 from meek.dates import comprehend_date, iso_datestamp
 from meek.norm import norm
 import mimetypes
-import json
 import logging
 import maya
 from meek.activity import Activity
@@ -22,6 +21,7 @@ from pprint import pformat, pprint
 import re
 import shutil
 from tzlocal import get_localzone
+import ujson as json
 
 
 logger = logging.getLogger(__name__)
