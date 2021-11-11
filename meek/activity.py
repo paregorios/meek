@@ -186,6 +186,11 @@ class Activity:
         note_list.sort(key=lambda t: t[1])
         return note_list
 
+    @ notes.setter
+    def notes(self, value):
+        for v, k in value:
+            self._notes[k] = v
+
     @ notes.deleter
     def notes(self):
         self._notes = dict()
