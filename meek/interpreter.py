@@ -498,7 +498,11 @@ class Interpreter:
                 kwargs['title'] = ' '.join(args)
             else:
                 raise ValueError(f'args: {args}, kwargs: {kwargs}')
-        result = self.manager.new_activity(**kwargs)
+        try:
+            result = self.manager.new_activity(**kwargs)
+        except ValueError as err:
+            self._uerror('new', err)
+            return ''
         self.modified = True
         return result
 
