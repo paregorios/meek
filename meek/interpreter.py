@@ -469,6 +469,8 @@ class Interpreter:
               (clears tags)
             > modify 2 tags:fish
             > modify 3 tags:cat,dog
+            > modify 3 tags:-cat
+              (removes existing "cat" tag value)
         """
         try:
             result = self.manager.modify_activity(args, **kwargs)
