@@ -207,6 +207,8 @@ class Activity:
 
     @ not_before.setter
     def not_before(self, value):
+        if value is None:
+            self._not_before = None
         start_dt, end_dt = comprehend_date(value)
         tomorrow = maya.when('tomorrow', tz)
         if start_dt >= tomorrow:
@@ -215,6 +217,10 @@ class Activity:
             self._not_before = start_dt
         if self.mode == 'live':
             self._append_event(f'not_before={self.due}')
+
+    @ not_before.deleter
+    def not_before(self):
+        self._not_before = None
 
     # project: this activity is a project (True) or not
     # projects have subordinate tasks, which are other activities

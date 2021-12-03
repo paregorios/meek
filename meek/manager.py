@@ -320,10 +320,10 @@ class Manager:
             for k, arg in kwargs.items():
                 setattr(a, k, arg)
             self._index_activity(a)
-        out_list = self._format_list(alist)
-        self.current = alist
-        msg = f'Modified {len(alist)} activities:\n'
-        msg += '\n'.join(out_list)
+        if len(alist) == 1:
+            msg = f'Modified 1 activity.'
+        else:
+            msg = f'Modified {len(alist)} activities.'
         return msg
 
     def new_activity(self, **kwargs):
@@ -379,8 +379,7 @@ class Manager:
                     raise NotImplementedError(f'arg={arg}')
             a.reset_history()
             a.due = due_dt
-            if a.not_before is not None:
-                a.not_before = None
+            del a.not_before
             self._index_activity(a)
             success += 1
         if len(alist) <= 1:
