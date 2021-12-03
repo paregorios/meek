@@ -257,26 +257,34 @@ class Activity:
 
     @ tags.setter
     def tags(self, value):
+        logger.debug(f'>>> {value} <<<')
         if value is None:
             self._tags = set()
         else:
             if isinstance(value, str):
-                v = [value, ]
+                values = [value, ]
             elif isinstance(value, list):
-                v = value
+                values = value
             else:
                 raise TypeError(f'value: {type(value)}={repr(value)}')
-            self._tags.update(v)
+            logger.debug(f'self._tags: {repr(self._tags)}')
+            remove = set([v[1:] for v in values if v.startswith('-')])
+            logger.debug(f'remove: {repr(remove)}')
+            add = set([v for v in values if not v.startswith('-')])
+            logger.debug(f'add: {repr(add)}')
+            self._tags.update(add)
+            self._tags.difference_update(remove)
+            logger.debug(f'self._tags: {repr(self._tags)}')
         if self.mode == 'live':
             self._append_event(f'tags={self.tags}')
 
     # tasks: activities subordinate to this activity, which is therefore a project
 
-    @property
+    @ property
     def tasks(self):
         return self._tasks
 
-    @tasks.setter
+    @ tasks.setter
     def tasks(self, value):
         if isinstance(value, list):
             self.add_tasks(value)
