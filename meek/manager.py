@@ -685,11 +685,16 @@ class Manager:
         out_list = list()
         for i, a in enumerate(alist):
             serial = f'{i}:'
+            if a.project:
+                serial += f' 🧩'
+            else:
+                serial += '   '
             for j, attrname in enumerate(attributes):
                 attrval = getattr(a, attrname)
                 if attrval is None or not attrval:
                     continue
                 if attrname == 'title':
+                    title_val = attrval
                     if j == 0:
                         serial += f' "{attrval}"'
                     else:
