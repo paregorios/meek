@@ -109,6 +109,11 @@ class Activity:
             v = value
         elif isinstance(value, int):
             v = bool(value)
+        elif isinstance(value, str) and value.lower() in ['false', 'true']:
+            if value.lower() == 'false':
+                v = False
+            else:
+                v = True
         else:
             raise TypeError(
                 f'Value ({repr(value)} is {type(value)}. Expected {bool}.')
