@@ -318,7 +318,12 @@ class Manager:
                     raise UsageError(f'Unrecognized argument {repr(val)}.')
         for a in alist:
             for k, arg in kwargs.items():
-                setattr(a, k, arg)
+                try:
+                    setattr(a, k, arg)
+                except ValueError as err:
+                    msg = str(err)
+                    msg += f' activity="{a.title}", attribute="{k}", value="{arg}"'
+                    raise UsageError(msg)
             self._index_activity(a)
         if len(alist) == 1:
             msg = f'Modified 1 activity.'
