@@ -247,7 +247,11 @@ class Manager:
         return f'Added {len(tasks)} tasks to project {project}.'
 
     def list_activities(self, **kwargs):
-        alist = self._get_list(**kwargs)
+        try:
+            alist = self._get_list(**kwargs)
+        except NotImplementedError as err:
+            msg = f'Meek does not currently support list creation using "{str(err)}".'
+            raise UsageError(msg)
         try:
             sortkeys = kwargs['sort']
         except KeyError:
