@@ -16,6 +16,21 @@ import readline
 WHERE_DEFAULT = '~/.meek'
 
 logger = logging.getLogger(__name__)
+rx_datetime = re.compile(
+    r'^'
+    r'(19|2\d)\d\d'
+    r'-'
+    r'(0\d|1[0-2])'
+    r'-'
+    r'(0\d|1\d|2\d|3[0-1])'
+    r'(T'
+    r'(0\d|1\d|2[0-3])'
+    r':'
+    r'[0-5]\d'
+    r'(Z|[+-](0\d|1\d|2[0-3]):[0-5]\d)?'
+    r')?'
+    r'$'
+)
 rx_numeric = re.compile(r'^(?P<numeric>\d+)$')
 rx_numeric_range = re.compile(r'^(?P<start>\d+)\s*-\s*(?P<end>\d+)$')
 
@@ -120,7 +135,10 @@ class Interpreter:
         logger.debug(f'objects: {repr(objects)}')
         for o in objects:
             k = None
-            if not o.startswith('http'):
+            m = rx_datetime.match(o)
+            if m is not None:
+                pass
+            elif not o.startswith('http'):
                 for delim in [':', '=']:
                     if delim in o:
                         parts = o.split(delim)
@@ -265,6 +283,16 @@ class Interpreter:
             entries = [f'{e[0]}:'.rjust(
                 longest+1) + f' {e[1]}' for e in entries]
             return '\n'.join(entries)
+
+    def _verb_hide(self, args, **kwargs):
+        """
+        Set not_before
+            > hide 1 tomorrow
+            > hide 2-3 sunday
+        """
+        logger.debug(f'args:{args}')
+        logger.debug(f'kwargs:{kwargs}')
+        return ''
 
     def _verb_import(self, args, **kwargs):
         """
