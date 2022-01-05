@@ -26,5 +26,5 @@ setuptools.setup(
         'tzlocal',
         'ujson'
     ],
-    python_requires='==3.9.7'
+    python_requires='>=3.9.7'
 )
