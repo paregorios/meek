@@ -212,16 +212,17 @@ class Activity:
 
     @ not_before.setter
     def not_before(self, value):
-        if value is None:
+        if value is None or value in ['none', '']:
             self._not_before = None
-        start_dt, end_dt = comprehend_date(value)
-        tomorrow = maya.when('tomorrow', tz)
-        if start_dt >= tomorrow:
-            self._not_before = iso_datestamp(start_dt)
         else:
-            self._not_before = start_dt
-        if self.mode == 'live':
-            self._append_event(f'not_before={self.due}')
+            start_dt, end_dt = comprehend_date(value)
+            tomorrow = maya.when('tomorrow', tz)
+            if start_dt >= tomorrow:
+                self._not_before = iso_datestamp(start_dt)
+            else:
+                self._not_before = start_dt
+            if self.mode == 'live':
+                self._append_event(f'not_before={self.due}')
 
     @ not_before.deleter
     def not_before(self):
