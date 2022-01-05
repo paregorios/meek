@@ -605,7 +605,7 @@ class Interpreter:
         try:
             result = self.manager.reschedule_activity(args, **kwargs)
         except UsageError as err:
-            self._uerror('modify', err)
+            self._uerror('reschedule', err)
         else:
             self.modified = True
             return result
