@@ -5,6 +5,8 @@ Python 3 package template (changeme)
 """
 
 from collections import deque
+
+from maya.core import MayaDT
 from meek.dates import comprehend_date, dow_future_proof, iso_datestamp
 from meek.norm import norm
 import logging
@@ -129,7 +131,10 @@ class Activity:
 
     @ due.setter
     def due(self, value):
-        if value is None or value in ['none', '']:
+        if isinstance(value, str):
+            if value in ['none', '']:
+                value = None
+        if value is None:
             self._due = None
         else:
             start_dt, end_dt = comprehend_date(value)
@@ -372,8 +377,11 @@ class Activity:
             kwargs = {'weeks': 2}
         else:
             kwargs = {f'{self.interval}s': 1}
+        logger.debug(f'kwargs: {kwargs}')
         today = maya.when('today', tz)
+        logger.debug(f'today: {today}')
         when = today.add(**kwargs)
+        logger.debug(f'when: {when}')
         self.due = when
         self.complete = False
 
