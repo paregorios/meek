@@ -129,13 +129,16 @@ class Activity:
 
     @ due.setter
     def due(self, value):
-        start_dt, end_dt = comprehend_date(value)
-        if end_dt is not None:
-            dt = end_dt
+        if value is None or value in ['none', '']:
+            self._due = None
         else:
-            dt = start_dt
-        dt = dow_future_proof(value, dt)
-        self._due = iso_datestamp(dt)
+            start_dt, end_dt = comprehend_date(value)
+            if end_dt is not None:
+                dt = end_dt
+            else:
+                dt = start_dt
+            dt = dow_future_proof(value, dt)
+            self._due = iso_datestamp(dt)
         if self.mode == 'live':
             self._append_event(f'due={self.due}')
 
