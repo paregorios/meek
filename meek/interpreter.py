@@ -49,8 +49,9 @@ class Interpreter:
             'del': 'delete',
             'done': 'complete',
             'h': 'help',
-            'hide': 'later',
+            'hide': 'not_before',
             'i': 'incorporate',
+            'later': 'not_before',
             'ls': 'list',
             'm': 'modify',
             'n': 'new',
@@ -352,16 +353,16 @@ class Interpreter:
         val = levels[logging.root.level]
         return f'Logging level is now {val}'
 
-    def _verb_later(self, args, **kwargs):
+    def _verb_not_before(self, args, **kwargs):
         """
         Mark activity/ies with a not_before time so they are temporarily hidden from listings.
-            > later 7 1 hour
-            > later 1-5 20 minutes
-            > later 2
+            > not_before 7 1 hour
+            > not_before 1-5 20 minutes
+            > not_before 2
               (defaults to 1 hour)
-            > later 0 monday
-            > later 0 next week
-            > later 1 next quarter
+            > not_before 0 monday
+            > not_before 0 next week
+            > not_before 1 next quarter
         """
         i, j, other = self._comprehend_args(args)
         dow = [
