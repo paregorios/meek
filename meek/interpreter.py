@@ -12,6 +12,8 @@ from pathlib import Path
 from pprint import pprint
 import re
 import readline
+from shutil import get_terminal_size
+import textwrap
 
 WHERE_DEFAULT = '~/.meek'
 
@@ -41,16 +43,18 @@ class Interpreter:
         self.manager = Manager()
         self.loaded = False
         self.modified = True
-        self.verbs = [a[6:] for a in dir(self) if a.startswith('_verb_')]
+        self.verbs = ['_'.join(a.split('_')[2:]) for a in dir(self) if a.startswith('_verb_')]
+        print(self.verbs)
         self.aliases = {
             '?': 'help',
             'all': 'list',
-            'bump': 'reschedule',
             'c': 'complete',
             'del': 'delete',
             'done': 'complete',
             'h': 'help',
+            'hide': 'not_before',
             'i': 'incorporate',
+            'later': 'not_before',
             'ls': 'list',
             'm': 'modify',
             'n': 'new',
@@ -129,6 +133,66 @@ class Interpreter:
         logger.debug(f'Results: i={i}, j={j}, other={repr(other)}')
         return (i, j, other)
 
+    def _comprehend_duration(self, values):
+        """Deal with duration statements."""
+        dow = [
+            'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+            'week', 'month', 'quarter', 'year']
+        days = []
+        for day in dow:
+            days.extend([day, f'this {day}', f'next {day}'])
+        days.extend(['today', 'tomorrow'])
+        v = ' '.join(values)
+        if v in days:
+            result = v
+        else:
+            qty = 1
+            unit = 'hour'
+            units = ['minute', 'minutes', 'hour', 'hours', 'day', 'days', 'week', 'weeks',
+                     'month', 'months', 'quarter', 'quarters', 'year', 'years']
+            if len(values) == 0:
+                pass
+            elif len(values) == 1:
+                try:
+                    qty = int(values[0])
+                except ValueError:
+                    if values[0] in units:
+                        unit = values[0]
+                    else:
+                        self._uerror(
+                            'not_before', f'Unsupported unit value "{values[0]}". Supported: {repr(units + dow)}.')
+                        return None
+            elif len(values) == 2:
+                try:
+                    qty = int(values[0])
+                except ValueError:
+                    self._uerror(
+                        'not_before', f'Expected integer value for first argument. Got {values[0]}.')
+                    return None
+                if values[1] in units:
+                    unit = values[1]
+                else:
+                    self._uerror(
+                        'not_before', f'Unsupported unit value "{values[1]}". Supported: {repr(units + dow)}.')
+                    return None
+            else:
+                self._uerror(
+                    'not_before', f'Incorrect number of arguments: {len(values)}')
+                return None
+            if not unit[-1] == 's':
+                unit = f'{unit}s'
+            now = maya.now()
+            then = now.add(**{unit: qty})
+            now = now.iso8601()
+            then = then.iso8601()
+            logger.debug(f'now: {now}')
+            logger.debug(f'then: {then}')
+            if (now.split('T')[0] != then.split('T')[0]):
+                result = then.split('T')[0]
+            else:
+                result = then
+        return result
+
     def _objectify(self, objects):
         args = []
         kwargs = {}
@@ -199,6 +263,30 @@ class Interpreter:
         """
         logging.getLogger().setLevel(level=logging.DEBUG)
         return self._verb_level(args, **kwargs)
+
+    def _verb_deadline(self, args, **kwargs):
+        """
+        Set due date on activity/ies.
+            > deadline 7 1 day
+            > deadline 1-5 20 days
+            > deadline 2
+              (defaults to today)
+            > deadline 0 monday
+            > deadline 0 next week
+            > deadline 1 next quarter
+        """
+        i, j, other = self._comprehend_args(args)
+        deadline = self._comprehend_duration(other)
+        if deadline is not None:
+            if j is None:
+                m_arg = [f'{i}', ]
+            else:
+                m_arg = [f'{i}-{j}', ]
+            logger.debug(f'due: {deadline}')
+            return self.manager.modify_activity(
+                m_arg, **{'due': deadline})
+        else:
+            logger.debug('failure')
 
     def _verb_delete(self, args, **kwargs):
         """
@@ -275,41 +363,18 @@ class Interpreter:
         else:
             entries = [
                 (
-                    k.split('_')[-1],
+                    k,
                     getdoc(getattr(self, f'_verb_{k}')).splitlines()[0]
                 ) for k in self.verbs]
             entries.sort(key=lambda x: x[0])
             longest = max([len(e[0]) for e in entries])
-            entries = [f'{e[0]}:'.rjust(
-                longest+1) + f' {e[1]}' for e in entries]
-            return '\n'.join(entries)
-
-    def _verb_hide(self, args, **kwargs):
-        """
-        Set not_before
-            > hide 1 tomorrow
-            > hide 2-3 sunday
-        """
-        logger.debug(f'args:{args}')
-        logger.debug(f'kwargs:{kwargs}')
-        i, j, other = self._comprehend_args(args)
-        logger.debug(f'i: {i}')
-        logger.debug(f'j: {j}')
-        logger.debug(f'other: {other}')
-        if len(other) == 0:
-            self._uerror('hide', 'Missing date-time argument.')
-            return ''
-        elif len(other) > 1:
-            other = [' '.join(other)]
-        if j is None:
-            m_args = [f'{i}']
-        else:
-            m_args = [f'{i}-{j}']
-        m_kwargs = {'not_before': other[0]}
-        logger.debug(f'm_args: {m_args}')
-        logger.debug(f'm_kwargs: {m_kwargs}')
-        result = self.manager.modify_activity(m_args, **m_kwargs)
-        return result
+            lines = []
+            width, height = get_terminal_size()
+            for e in entries:
+                lines.append(
+                    f'{e[0]}:'.rjust(longest+1) + textwrap.fill(f' {e[1]}', width=width-longest-2, subsequent_indent=' '*(longest+2))
+                )
+            return '\n'.join(lines)
 
     def _verb_import(self, args, **kwargs):
         """
@@ -379,59 +444,27 @@ class Interpreter:
         val = levels[logging.root.level]
         return f'Logging level is now {val}'
 
-    def _verb_later(self, args, **kwargs):
+    def _verb_not_before(self, args, **kwargs):
         """
         Mark activity/ies with a not_before time so they are temporarily hidden from listings.
-            > later 7 1 hour
-            > later 1-5 20 minutes
-            > later 2
+            > not_before 7 1 hour
+            > not_before 1-5 20 minutes
+            > not_before 2
               (defaults to 1 hour)
+            > not_before 0 monday
+            > not_before 0 next week
+            > not_before 1 next quarter
         """
         i, j, other = self._comprehend_args(args)
-        qty = 1
-        unit = 'hour'
-        units = ['minute', 'minutes', 'hour',
-                 'hours', 'day', 'days', 'week', 'weeks']
-        if other:
-            if len(other) == 1:
-                try:
-                    qty = int(other[0])
-                except TypeError:
-                    if other[0] in units:
-                        unit = other[0]
-                    else:
-                        self._uerror(
-                            'later', f'Unsupported unit value "{other[0]}". Supported: {repr(units)}.')
-                        return None
-            elif len(other) == 2:
-                try:
-                    qty = int(other[0])
-                except TypeError:
-                    self._uerror(
-                        'later', f'Expected integer value for first argument. Got {other[0]}.')
-                    return None
-                if other[1] in units:
-                    unit = other[1]
-                else:
-                    self._uerror(
-                        'later', f'Unsupported unit value "{other[1]}". Supported: {repr(units)}.')
-                    return None
+        not_before = self._comprehend_duration(other)
+        if not_before is not None:
+            if j is None:
+                m_arg = [f'{i}', ]
             else:
-                self._uerror(
-                    'later', f'Incorrect number of arguments: {len(other)}')
-                return None
-        else:
-            qty = 1
-        if not unit[-1] == 's':
-            unit = f'{unit}s'
-        now = maya.now()
-        then = now.add(**{unit: qty})
-        if j is None:
-            m_arg = [f'{i}', ]
-        else:
-            m_arg = [f'{i}-{j}', ]
-        return self.manager.modify_activity(
-            m_arg, **{'not_before': then.iso8601()})
+                m_arg = [f'{i}-{j}', ]
+            logger.debug(f'not_before: {not_before}')
+            return self.manager.modify_activity(
+                m_arg, **{'not_before': not_before})
 
     def _verb_list(self, args, **kwargs):
         """
@@ -515,6 +548,12 @@ class Interpreter:
             > modify 3 tags:cat,dog
             > modify 3 tags:-cat
               (removes existing "cat" tag value)
+            > modify 4 not_before:
+              (eliminates existing not_before value)
+            > modify 4 not_before:tomorrow
+            > modify 7 due:
+              (eliminates existing due date)
+            > modify 7 due:'next tuesday'
         """
         try:
             result = self.manager.modify_activity(args, **kwargs)
