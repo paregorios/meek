@@ -141,7 +141,7 @@ class Interpreter:
         days.extend(['today', 'tomorrow'])
         v = ' '.join(values)
         if v in days:
-            not_before = v
+            result = v
         else:
             qty = 1
             unit = 'hour'
@@ -188,7 +188,7 @@ class Interpreter:
                 result = then.split('T')[0]
             else:
                 result = then
-            return result
+        return result
 
     def _objectify(self, objects):
         args = []
@@ -273,7 +273,17 @@ class Interpreter:
             > deadline 1 next quarter
         """
         i, j, other = self._comprehend_args(args)
-
+        deadline = self._comprehend_duration(other)
+        if deadline is not None:
+            if j is None:
+                m_arg = [f'{i}', ]
+            else:
+                m_arg = [f'{i}-{j}', ]
+            logger.debug(f'due: {deadline}')
+            return self.manager.modify_activity(
+                m_arg, **{'due': deadline})
+        else:
+            logger.debug('failure')
 
     def _verb_delete(self, args, **kwargs):
         """
