@@ -41,7 +41,8 @@ class Interpreter:
         self.manager = Manager()
         self.loaded = False
         self.modified = True
-        self.verbs = [a[6:] for a in dir(self) if a.startswith('_verb_')]
+        self.verbs = ['_'.join(a.split('_')[2:]) for a in dir(self) if a.startswith('_verb_')]
+        print(self.verbs)
         self.aliases = {
             '?': 'help',
             'all': 'list',
@@ -360,7 +361,7 @@ class Interpreter:
         else:
             entries = [
                 (
-                    k.split('_')[-1],
+                    k,
                     getdoc(getattr(self, f'_verb_{k}')).splitlines()[0]
                 ) for k in self.verbs]
             entries.sort(key=lambda x: x[0])
