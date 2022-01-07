@@ -45,7 +45,6 @@ class Interpreter:
         self.aliases = {
             '?': 'help',
             'all': 'list',
-            'bump': 'reschedule',
             'c': 'complete',
             'del': 'delete',
             'done': 'complete',
@@ -515,6 +514,12 @@ class Interpreter:
             > modify 3 tags:cat,dog
             > modify 3 tags:-cat
               (removes existing "cat" tag value)
+            > modify 4 not_before:
+              (eliminates existing not_before value)
+            > modify 4 not_before:tomorrow
+            > modify 7 due:
+              (eliminates existing due date)
+            > modify 7 due:'next tuesday'
         """
         try:
             result = self.manager.modify_activity(args, **kwargs)
