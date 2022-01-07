@@ -12,6 +12,8 @@ from pathlib import Path
 from pprint import pprint
 import re
 import readline
+from shutil import get_terminal_size
+import textwrap
 
 WHERE_DEFAULT = '~/.meek'
 
@@ -366,9 +368,13 @@ class Interpreter:
                 ) for k in self.verbs]
             entries.sort(key=lambda x: x[0])
             longest = max([len(e[0]) for e in entries])
-            entries = [f'{e[0]}:'.rjust(
-                longest+1) + f' {e[1]}' for e in entries]
-            return '\n'.join(entries)
+            lines = []
+            width, height = get_terminal_size()
+            for e in entries:
+                lines.append(
+                    f'{e[0]}:'.rjust(longest+1) + textwrap.fill(f' {e[1]}', width=width-longest-2, subsequent_indent=' '*(longest+2))
+                )
+            return '\n'.join(lines)
 
     def _verb_import(self, args, **kwargs):
         """
