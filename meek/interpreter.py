@@ -292,7 +292,24 @@ class Interpreter:
         """
         logger.debug(f'args:{args}')
         logger.debug(f'kwargs:{kwargs}')
-        return ''
+        i, j, other = self._comprehend_args(args)
+        logger.debug(f'i: {i}')
+        logger.debug(f'j: {j}')
+        logger.debug(f'other: {other}')
+        if len(other) == 0:
+            self._uerror('hide', 'Missing date-time argument.')
+            return ''
+        elif len(other) > 1:
+            other = [' '.join(other)]
+        if j is None:
+            m_args = [f'{i}']
+        else:
+            m_args = [f'{i}-{j}']
+        m_kwargs = {'not_before': other[0]}
+        logger.debug(f'm_args: {m_args}')
+        logger.debug(f'm_kwargs: {m_kwargs}')
+        result = self.manager.modify_activity(m_args, **m_kwargs)
+        return result
 
     def _verb_import(self, args, **kwargs):
         """
@@ -404,7 +421,6 @@ class Interpreter:
                     'later', f'Incorrect number of arguments: {len(other)}')
                 return None
         else:
-            unit = 'hours'
             qty = 1
         if not unit[-1] == 's':
             unit = f'{unit}s'
