@@ -44,7 +44,6 @@ class Interpreter:
         self.loaded = False
         self.modified = True
         self.verbs = ['_'.join(a.split('_')[2:]) for a in dir(self) if a.startswith('_verb_')]
-        print(self.verbs)
         self.aliases = {
             '?': 'help',
             'all': 'list',
