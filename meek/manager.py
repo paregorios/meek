@@ -247,6 +247,7 @@ class Manager:
         return f'Added {len(tasks)} tasks to project {project}.'
 
     def list_activities(self, **kwargs):
+        logger.debug(f'list_activities:kwargs: {pformat(kwargs, indent=4)}')
         try:
             alist = self._get_list(**kwargs)
         except NotImplementedError as err:
@@ -662,10 +663,12 @@ class Manager:
             val = 'today'
         idx = self.indexes['not_before']
         start_dt, end_dt = comprehend_date(val)
-        start = iso_datestamp(start_dt)
+        start = start_dt.iso8601()
+        logger.debug(f'start: {start}')
         matches = []
         for k, a in idx.items():
             if k <= start:
+                logger.debug(f'k={k}')
                 matches.append(a)
         blist = [item for sublist in matches for item in sublist]
         blist.extend([a for a in self.activities.values()
@@ -719,6 +722,8 @@ class Manager:
     def _get_list(self, **kwargs):
         alist = list(self.activities.values())
         blist = copy(alist)
+        logger.debug(f'_get_list:kwargs\n{pformat(kwargs, indent=4)}')
+        logger.debug(f'_get_list:len(blist): {len(blist)}')
         if not kwargs:
             return self._filter_list_not_before(blist, 'today')
         try:
@@ -750,6 +755,7 @@ class Manager:
         else:
             if nb in ['any', 'all']:
                 kwargs.pop('not_before')
+        logger.debug(f'_get_list:len(blist) after filter not before: {len(blist)}')
 
         try:
             or_list = kwargs['or']
@@ -758,7 +764,10 @@ class Manager:
         for k, argv in kwargs.items():
             if k in ['sort', 'or'] or k in or_list:
                 continue
+            logger.debug(f'filtering with k={k} and argv={argv}')
             blist = self._filter_list(blist, k, argv)
+            logger.debug(f'_get_list:blist after filtration: {pformat(blist, indent=4)}')
+
         if or_list:
             or_activities = dict()
             or_activities_set = set()

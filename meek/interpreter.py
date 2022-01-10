@@ -481,6 +481,13 @@ class Interpreter:
             kwargs['complete']
         except KeyError:
             kwargs['complete'] = False
+        try:
+            kwargs['overdue']
+        except KeyError:
+            pass
+        else:
+            if kwargs['overdue'] == '':
+                kwargs['overdue'] = 'today'
         if args:
             if 'overdue' in args:
                 kwargs['overdue'] = 'today'
@@ -488,20 +495,13 @@ class Interpreter:
             elif 'due' in args:
                 kwargs['due'] = 'today'
                 args.remove('due')
-            elif 'complete' in args:
-                kwargs['complete'] = True
-                args.remove('complete')
-            elif 'done' in args:
-                kwargs['complete'] = True
-                args.remove('done')
-            elif 'completed' in args:
-                kwargs['complete'] = True
-                args.remove('completed')
-            elif 'finished' in args:
-                kwargs['complete'] = True
-                args.remove('finished')
-            elif 'incomplete' in args:
+            if 'incomplete' in args:
                 kwargs['complete'] = False
+            else:
+                for done_word in ['complete', 'done', 'completed', 'finished']:
+                    if done_word in args:
+                        kwargs['complete'] = True
+                        args.remove('done_word')
             if len(args) > 0:
                 try:
                     kwargs['words']
