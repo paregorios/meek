@@ -299,9 +299,12 @@ class Manager:
         for p in activity_dir.iterdir():
             if p.is_file():
                 if p.name.endswith('.json'):
+                    logger.debug(f'loading {p.name}')
                     with open(p, 'r', encoding='utf-8') as f:
                         adict = json.load(f)
                     del f
+                    logger.debug(f'instantiating activity for {p.name}')
+                    logger.debug(f'json: {adict}')
                     a = Activity(**adict, mode='memorex')
                     self.add_activity(a)
                     i += 1
