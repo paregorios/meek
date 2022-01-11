@@ -501,7 +501,7 @@ class Interpreter:
                 for done_word in ['complete', 'done', 'completed', 'finished']:
                     if done_word in args:
                         kwargs['complete'] = True
-                        args.remove('done_word')
+                        args.remove(done_word)
             if len(args) > 0:
                 try:
                     kwargs['words']
